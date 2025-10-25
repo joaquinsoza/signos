@@ -1,6 +1,7 @@
 // Signos - Minimal STT Client
 
 import { exit } from '@tauri-apps/plugin-process';
+import { BaseDirectory, exists, readTextFile, writeTextFile, mkdir } from '@tauri-apps/plugin-fs';
 
 interface TranscriptMessage {
     type: 'transcript';
@@ -26,6 +27,17 @@ interface ErrorMessage {
 
 type ServerMessage = TranscriptMessage | StatsMessage | ErrorMessage;
 type AppView = 'menu' | 'settings' | 'recording';
+
+interface AppConfig {
+    workerUrl: string;
+    selectedDeviceId: string;
+}
+
+const CONFIG_FILE = 'config.json';
+const DEFAULT_CONFIG: AppConfig = {
+    workerUrl: 'ws://localhost:8787',
+    selectedDeviceId: '',
+};
 
 class SignosClient {
     private currentView: AppView = 'menu';
@@ -75,8 +87,63 @@ class SignosClient {
         };
 
         this.initializeEventListeners();
-        this.loadAudioDevices();
+        this.initialize();
+    }
+
+    private async initialize(): Promise<void> {
+        await this.loadConfig();
+        await this.loadAudioDevices();
         this.showView('menu');
+    }
+
+    private async loadConfig(): Promise<void> {
+        try {
+            console.log('[Config] Checking if config exists...');
+            const configExists: boolean = await exists(CONFIG_FILE, { baseDir: BaseDirectory.AppData });
+            console.log('[Config] Config exists:', configExists);
+
+            if (configExists) {
+                const configJson: string = await readTextFile(CONFIG_FILE, { baseDir: BaseDirectory.AppData });
+                const config: AppConfig = JSON.parse(configJson);
+                console.log('[Config] Loaded config:', config);
+
+                this.workerUrl = config.workerUrl;
+                this.selectedDeviceId = config.selectedDeviceId;
+
+                this.elements.workerUrlInput.value = this.workerUrl;
+            } else {
+                console.log('[Config] Creating default config...');
+                await this.saveConfig();
+            }
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.error('[Config] Failed to load config:', message, error);
+        }
+    }
+
+    private async saveConfig(): Promise<void> {
+        try {
+            const config: AppConfig = {
+                workerUrl: this.workerUrl,
+                selectedDeviceId: this.selectedDeviceId,
+            };
+            console.log('[Config] Saving config:', config);
+
+            // Ensure directory exists
+            try {
+                await mkdir('', { baseDir: BaseDirectory.AppData, recursive: true });
+            } catch (e) {
+                // Directory might already exist, ignore error
+            }
+
+            await writeTextFile(CONFIG_FILE, JSON.stringify(config, null, 2), {
+                baseDir: BaseDirectory.AppData,
+            });
+            console.log('[Config] Config saved successfully');
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            console.error('[Config] Failed to save config:', message, error);
+        }
     }
 
     private initializeEventListeners(): void {
@@ -84,7 +151,7 @@ class SignosClient {
         this.elements.settingsBtn.addEventListener('click', () => this.openSettings());
         this.elements.exitBtn.addEventListener('click', () => this.exitApp());
         this.elements.stopBtn.addEventListener('click', () => this.stop());
-        this.elements.saveSettingsBtn.addEventListener('click', () => this.saveSettings());
+        this.elements.saveSettingsBtn.addEventListener('click', async () => await this.saveSettings());
         this.elements.cancelSettingsBtn.addEventListener('click', () => this.showView('menu'));
     }
 
@@ -217,9 +284,10 @@ class SignosClient {
         this.showView('menu');
     }
 
-    private saveSettings(): void {
+    private async saveSettings(): Promise<void> {
         this.workerUrl = this.elements.workerUrlInput.value.trim();
         this.selectedDeviceId = this.elements.audioInputSelect.value;
+        await this.saveConfig();
         this.showView('menu');
     }
 
