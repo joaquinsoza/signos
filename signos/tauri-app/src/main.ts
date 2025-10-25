@@ -88,6 +88,7 @@ class SignosClient {
         settingsBtn: HTMLButtonElement;
         exitBtn: HTMLButtonElement;
         stopBtn: HTMLButtonElement;
+        toggleDebugBtn: HTMLButtonElement;
         workerUrlInput: HTMLInputElement;
         audioInputSelect: HTMLSelectElement;
         signDurationInput: HTMLInputElement;
@@ -104,6 +105,8 @@ class SignosClient {
         beeImage: HTMLImageElement;
     };
 
+    private isDebugVisible: boolean = false;
+
     constructor() {
         this.views = {
             menu: document.getElementById('menuView') as HTMLElement,
@@ -116,6 +119,7 @@ class SignosClient {
             settingsBtn: document.getElementById('settingsBtn') as HTMLButtonElement,
             exitBtn: document.getElementById('exitBtn') as HTMLButtonElement,
             stopBtn: document.getElementById('stopBtn') as HTMLButtonElement,
+            toggleDebugBtn: document.getElementById('toggleDebugBtn') as HTMLButtonElement,
             workerUrlInput: document.getElementById('workerUrl') as HTMLInputElement,
             audioInputSelect: document.getElementById('audioInput') as HTMLSelectElement,
             signDurationInput: document.getElementById('signDurationInput') as HTMLInputElement,
@@ -205,8 +209,21 @@ class SignosClient {
         this.elements.settingsBtn.addEventListener('click', () => this.openSettings());
         this.elements.exitBtn.addEventListener('click', () => this.exitApp());
         this.elements.stopBtn.addEventListener('click', () => this.stop());
+        this.elements.toggleDebugBtn.addEventListener('click', () => this.toggleDebug());
         this.elements.saveSettingsBtn.addEventListener('click', async () => await this.saveSettings());
         this.elements.cancelSettingsBtn.addEventListener('click', () => this.showView('menu'));
+    }
+
+    private toggleDebug(): void {
+        this.isDebugVisible = !this.isDebugVisible;
+
+        if (this.isDebugVisible) {
+            this.elements.debugLog.classList.remove('hidden');
+            this.elements.toggleDebugBtn.textContent = 'Hide Debug';
+        } else {
+            this.elements.debugLog.classList.add('hidden');
+            this.elements.toggleDebugBtn.textContent = 'Show Debug';
+        }
     }
 
     private async openSettings(): Promise<void> {
@@ -358,7 +375,11 @@ class SignosClient {
         this.signDisplayQueue = [];
         this.elements.signOverlay.classList.add('hidden');
         this.elements.debugLog.innerHTML = '';
-        this.elements.beeImage.src = '/abeja_0.jpeg';
+        this.elements.debugLog.classList.add('hidden');
+
+        // Reset debug state
+        this.isDebugVisible = false;
+        this.elements.toggleDebugBtn.textContent = 'Show Debug';
 
         this.log('Recording stopped', 'success');
 

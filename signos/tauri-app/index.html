@@ -59,11 +59,12 @@
         <div id="recordingView" class="view hidden">
             <img src="/abeja_0.jpeg" alt="Sign Language" class="bee-image" />
 
-            <!-- Debug Log Overlay -->
-            <div id="debugLog" class="debug-overlay"></div>
+            <!-- Debug Log Overlay (hidden by default) -->
+            <div id="debugLog" class="debug-overlay hidden"></div>
 
-            <!-- Stop Button Overlay (visible on hover) -->
+            <!-- Control Overlay (visible on hover) -->
             <div id="stopOverlay" class="stop-overlay">
+                <button id="toggleDebugBtn" class="control-btn">Show Debug</button>
                 <button id="stopBtn" class="stop-btn">Stop</button>
             </div>
         </div>

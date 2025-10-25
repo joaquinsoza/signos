@@ -185,7 +185,7 @@ body {
     right: 10px;
     max-height: 150px;
     overflow-y: auto;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.9);
     border-radius: 8px;
     padding: 10px;
     font-family: 'Monaco', 'Menlo', monospace;
@@ -193,6 +193,16 @@ body {
     color: #4fc3f7;
     line-height: 1.4;
     pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+}
+
+.debug-overlay.hidden {
+    display: none;
+}
+
+.debug-overlay:not(.hidden) {
+    opacity: 1;
 }
 
 .debug-overlay:empty {
@@ -220,7 +230,7 @@ body {
     margin-right: 5px;
 }
 
-/* Stop Button Overlay */
+/* Control Overlay */
 .stop-overlay {
     position: absolute;
     top: 0;
@@ -228,16 +238,40 @@ body {
     width: 100%;
     height: 100%;
     display: flex;
+    flex-direction: column;
+    gap: 10px;
     justify-content: center;
     align-items: center;
     background: rgba(0, 0, 0, 0.5);
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.2s ease;
     border-radius: 12px;
 }
 
 #recordingView:hover .stop-overlay {
     opacity: 1;
+    pointer-events: auto;
+}
+
+.control-btn {
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #5e9ea0;
+    color: white;
+    transition: opacity 0.2s;
+}
+
+.control-btn:hover {
+    opacity: 0.85;
+}
+
+.control-btn:active {
+    opacity: 0.7;
 }
 
 .stop-btn {
@@ -249,6 +283,7 @@ body {
     cursor: pointer;
     background: #c75b5b;
     color: white;
+    transition: opacity 0.2s;
 }
 
 .stop-btn:hover {
@@ -293,6 +328,10 @@ body {
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
+}
+
+.sign-overlay.hidden {
+    display: none;
 }
 
 .sign-overlay:not(.hidden) {
