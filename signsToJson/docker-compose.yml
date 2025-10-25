@@ -1,0 +1,53 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: signos_postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-signos_db}
+      POSTGRES_USER: ${DB_USER:-signos}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-signos}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - signos_network
+
+  extractor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: signos_extractor
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-signos_db}
+      DB_USER: ${DB_USER:-signos}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - ./src:/app/src
+      - ./pdfs:/app/pdfs
+      - ./output:/app/output
+    working_dir: /app
+    networks:
+      - signos_network
+    # Keep container running for interactive commands
+    command: tail -f /dev/null
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  signos_network:
+    driver: bridge
