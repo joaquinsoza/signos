@@ -216,16 +216,36 @@ class SignosClient {
 
     private async loadAudioDevices(): Promise<void> {
         try {
+            console.log('[AudioDevices] Requesting microphone permission...');
+
+            // Check if navigator.mediaDevices is available
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('navigator.mediaDevices.getUserMedia not supported');
+            }
+
             // Request microphone permission first to get device labels
             const stream: MediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            console.log('[AudioDevices] Permission granted, stream:', stream);
             stream.getTracks().forEach((track: MediaStreamTrack) => track.stop());
 
             const devices: MediaDeviceInfo[] = await navigator.mediaDevices.enumerateDevices();
+            console.log('[AudioDevices] All devices:', devices);
+
             const audioInputs: MediaDeviceInfo[] = devices.filter((device: MediaDeviceInfo) => device.kind === 'audioinput');
+            console.log('[AudioDevices] Audio inputs found:', audioInputs.length);
+            audioInputs.forEach((device: MediaDeviceInfo, idx: number) => {
+                console.log(`[AudioDevices] Device ${idx + 1}:`, {
+                    deviceId: device.deviceId,
+                    label: device.label,
+                    kind: device.kind,
+                    groupId: device.groupId
+                });
+            });
 
             this.elements.audioInputSelect.innerHTML = '';
 
             if (audioInputs.length === 0) {
+                console.warn('[AudioDevices] No audio inputs detected');
                 const option = document.createElement('option');
                 option.value = '';
                 option.textContent = 'No audio inputs found';
@@ -251,15 +271,19 @@ class SignosClient {
                 }
 
                 this.elements.audioInputSelect.appendChild(option);
+                console.log(`[AudioDevices] Added option: ${label} (${device.deviceId})`);
             });
 
             // Select first device by default if none selected
             if (!this.selectedDeviceId && audioInputs.length > 0) {
                 this.selectedDeviceId = audioInputs[0].deviceId;
+                console.log(`[AudioDevices] Auto-selected first device: ${this.selectedDeviceId}`);
             }
+
+            console.log('[AudioDevices] Load complete, total inputs:', audioInputs.length);
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : String(error);
-            console.error('Failed to enumerate devices:', message);
+            console.error('[AudioDevices] Failed to enumerate devices:', message, error);
 
             this.elements.audioInputSelect.innerHTML = '';
             const option = document.createElement('option');
