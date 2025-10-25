@@ -1,43 +1,75 @@
 /**
- * Signos STT Worker - TypeScript Implementation
- * Real-time Speech-to-Text using Cloudflare Workers AI (nova-3)
+ * Signos Worker - Real-time Speech-to-Sign Language Translation
+ * Architecture: STT (nova-3) → RAG (Vectorize) → Sign Selection (Llama)
  *
- * nova-3 is Deepgram's multilingual speech recognition model
- * with support for Spanish and language detection via WebSocket streaming.
+ * Flow:
+ * 1. Client sends audio → Worker forwards to nova-3
+ * 2. nova-3 returns transcript → Worker sends to client
+ * 3. Worker queries Vectorize for matching signs
+ * 4. Llama selects best signs for sentence
+ * 5. Worker sends sign sequence to client
  */
 
-interface Env {
-	AI: Ai;
-	SESSION_STORE?: KVNamespace;
-	MOCK_MODE?: string;
-	CF_ACCOUNT: string;
-	CF_API_TOKEN: string;
-}
+import type { Env, ClientMessage, SignMatch, ImagePath, ErrorMessage, StatsMessage } from './types';
+import { SignMatcher } from './services/sign-matcher';
 
-interface TranscriptMessage {
-	type: 'transcript';
-	text: string;
-	is_final: boolean;
-	timestamp: number;
-	latency_ms?: number;
-	language?: string;
-}
+/**
+ * Translate transcript to signs and send to client
+ */
+async function translateAndSendSigns(
+	ws: WebSocket,
+	signMatcher: SignMatcher,
+	text: string
+): Promise<void> {
+	try {
+		console.log(`[SignMatcher] Translating: "${text}"`);
+		const startTime = Date.now();
 
-interface StatsMessage {
-	type: 'stats';
-	bytes_received: number;
-	chunks_processed: number;
-	avg_latency_ms: number;
-	timestamp: number;
-}
+		// Get sign sequence from Vectorize RAG
+		const signs = await signMatcher.translateToSigns(text);
 
-interface ErrorMessage {
-	type: 'error';
-	error: string;
-	timestamp: number;
-}
+		const translationTime = Date.now() - startTime;
+		console.log(`[SignMatcher] Translation took ${translationTime}ms`);
 
-type ClientMessage = TranscriptMessage | StatsMessage | ErrorMessage;
+		if (signs.length === 0) {
+			console.log('[SignMatcher] No signs found for:', text);
+			return;
+		}
+
+		// Format for client: parse image JSON and structure properly
+		const signInfos = signs.map((sign) => {
+			let images: ImagePath[] = [];
+			try {
+				images = JSON.parse(sign.images);
+			} catch (e) {
+				console.error('[SignMatcher] Failed to parse images for', sign.glosa, ':', e);
+			}
+
+			return {
+				glosa: sign.glosa,
+				images: images,
+				definition: sign.definition,
+				confidence: sign.score,
+			};
+		});
+
+		// Send to client
+		const signsMessage: ClientMessage = {
+			type: 'signs',
+			text: text,
+			signs: signInfos,
+			timestamp: Date.now(),
+		};
+
+		ws.send(JSON.stringify(signsMessage));
+
+		console.log(
+			`[SignMatcher] ✅ Sent ${signs.length} signs: ${signs.map((s) => s.glosa).join(', ')}`
+		);
+	} catch (error) {
+		console.error('[SignMatcher] Translation error:', error);
+	}
+}
 
 /**
  * Mock STT for testing when AI is unavailable
@@ -68,9 +100,12 @@ async function handleWebSocket(
 
 	serverWs.accept();
 
+	// Initialize SignMatcher for RAG translation
+	const signMatcher = new SignMatcher(env, env.AI);
+
 	if (useMock) {
 		// Mock mode: Simple passthrough with fake transcriptions
-		handleMockMode(clientWs, serverWs);
+		handleMockMode(clientWs, serverWs, signMatcher);
 		return;
 	}
 
@@ -144,7 +179,7 @@ async function handleWebSocket(
 		});
 
 		// Receive transcriptions from nova-3 → client
-		novaWs.addEventListener('message', (event: MessageEvent) => {
+		novaWs.addEventListener('message', async (event: MessageEvent) => {
 			console.log(`[NOVA→WORKER] Received message, type: ${typeof event.data}`);
 
 			if (typeof event.data === 'string') {
@@ -171,7 +206,7 @@ async function handleWebSocket(
 				console.log(`[NOVA→WORKER] Extracted transcript: "${transcript}" (speech_final: ${speechFinal})`);
 
 				// Send transcript to client
-				const message: TranscriptMessage = {
+				const message: ClientMessage = {
 					type: 'transcript',
 					text: transcript,
 					is_final: isFinal,
@@ -179,8 +214,13 @@ async function handleWebSocket(
 					latency_ms: latency,
 				};
 
-				console.log(`[WORKER→CLIENT] Sending:`, JSON.stringify(message));
+				console.log(`[WORKER→CLIENT] Sending transcript:`, JSON.stringify(message));
 				serverWs.send(JSON.stringify(message));
+
+				// Translate to signs on final transcript
+				if (isFinal && transcript.trim().length > 0) {
+					await translateAndSendSigns(serverWs, signMatcher, transcript);
+				}
 
 				// Send stats every 10 updates
 				if (updatesReceived % 10 === 0) {
@@ -248,11 +288,11 @@ async function handleWebSocket(
 /**
  * Handle mock mode (for testing without AI)
  */
-function handleMockMode(clientWs: WebSocket, serverWs: WebSocket): void {
+function handleMockMode(clientWs: WebSocket, serverWs: WebSocket, signMatcher: SignMatcher): void {
 	let totalBytes = 0;
 	let mockChunkCount = 0;
 
-	serverWs.addEventListener('message', (event: MessageEvent) => {
+	serverWs.addEventListener('message', async (event: MessageEvent) => {
 		if (event.data instanceof ArrayBuffer) {
 			totalBytes += event.data.byteLength;
 
@@ -260,19 +300,25 @@ function handleMockMode(clientWs: WebSocket, serverWs: WebSocket): void {
 			if (totalBytes % 16000 < event.data.byteLength) {
 				mockChunkCount++;
 
-				const message: TranscriptMessage = {
+				const mockText = mockTranscribe();
+
+				const message: ClientMessage = {
 					type: 'transcript',
-					text: mockTranscribe(),
+					text: mockText,
 					is_final: true,
 					timestamp: Date.now(),
+					latency_ms: 150,
 					language: 'es',
 				};
 
 				serverWs.send(JSON.stringify(message));
 
+				// Translate mock text to signs
+				await translateAndSendSigns(serverWs, signMatcher, mockText);
+
 				// Send stats
 				if (mockChunkCount % 5 === 0) {
-					const stats: StatsMessage = {
+					const stats: ClientMessage = {
 						type: 'stats',
 						bytes_received: totalBytes,
 						chunks_processed: mockChunkCount,
