@@ -1,4 +1,4 @@
-name = "signos-tok-worker"
+  signos-chat/name = "signos-tok-worker"
 main = "src/index.ts"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
@@ -12,10 +12,11 @@ binding = "AI"
 binding = "VECTORIZE"
 index_name = "signos-lsch-index"
 
-# R2 bucket for storing generated videos
-[[r2_buckets]]
-binding = "VIDEOS"
-bucket_name = "signos-tok-videos"
+# R2 bucket for storing generated videos (comentado - no habilitado en cuenta)
+# [[r2_buckets]]
+# binding = "VIDEOS"
+# bucket_name = "signos-tok-videos"
+# preview_bucket_name = "signos-tok-videos"
 
 # Remote mode for local development
 [dev]
