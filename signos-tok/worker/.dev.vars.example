@@ -1,0 +1,4 @@
+# Cloudflare credentials for local development
+CF_ACCOUNT=your_cloudflare_account_id
+CF_API_TOKEN=your_cloudflare_api_token
+

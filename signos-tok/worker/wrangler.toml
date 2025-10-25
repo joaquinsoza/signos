@@ -1,0 +1,23 @@
+name = "signos-tok-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# AI binding for embeddings and LLM
+[ai]
+binding = "AI"
+
+# Vectorize binding for sign lookup
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "signos-lsch-index"
+
+# R2 bucket for storing generated videos
+[[r2_buckets]]
+binding = "VIDEOS"
+bucket_name = "signos-tok-videos"
+
+# Remote mode for local development
+[dev]
+remote = true
+
