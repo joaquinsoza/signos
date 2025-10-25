@@ -1,0 +1,277 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: transparent;
+    overflow: hidden;
+    width: 290px;
+    height: 380px;
+}
+
+#app {
+    width: 290px;
+    height: 380px;
+    position: relative;
+}
+
+/* View Management */
+.view {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.view.hidden {
+    display: none;
+}
+
+/* Menu View */
+#menuView {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: rgba(30, 30, 30, 0.95);
+    border-radius: 12px;
+}
+
+.menu-btn {
+    width: 200px;
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #5e9ea0;
+    color: white;
+}
+
+.menu-btn:hover {
+    opacity: 0.85;
+}
+
+.menu-btn:active {
+    opacity: 0.7;
+}
+
+#exitBtn {
+    background: #c75b5b;
+}
+
+#exitBtn:hover {
+    opacity: 0.85;
+}
+
+/* Settings View */
+#settingsView {
+    background: rgba(30, 30, 30, 0.95);
+    border-radius: 12px;
+    padding: 25px;
+}
+
+.settings-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.settings-content h2 {
+    color: white;
+    font-size: 20px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.settings-content label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.settings-content input,
+.settings-content select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.settings-content input:focus,
+.settings-content select:focus {
+    outline: none;
+    border-color: #5e9ea0;
+}
+
+.settings-content select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+    padding-right: 35px;
+}
+
+.settings-content select option {
+    background: rgba(30, 30, 30, 0.98);
+    color: white;
+    padding: 10px;
+}
+
+.settings-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.settings-btn {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+#saveSettingsBtn {
+    background: #5e9ea0;
+    color: white;
+}
+
+#cancelSettingsBtn {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.settings-btn:hover {
+    opacity: 0.85;
+}
+
+/* Recording View */
+#recordingView {
+    background: transparent;
+}
+
+.bee-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+/* Debug Log Overlay */
+.debug-overlay {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 10px;
+    color: #4fc3f7;
+    line-height: 1.4;
+    pointer-events: none;
+}
+
+.debug-overlay:empty {
+    display: none;
+}
+
+.debug-entry {
+    margin-bottom: 3px;
+}
+
+.debug-entry.info {
+    color: #4fc3f7;
+}
+
+.debug-entry.success {
+    color: #66bb6a;
+}
+
+.debug-entry.error {
+    color: #ef5350;
+}
+
+.debug-entry .time {
+    color: #888;
+    margin-right: 5px;
+}
+
+/* Stop Button Overlay */
+.stop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 12px;
+}
+
+#recordingView:hover .stop-overlay {
+    opacity: 1;
+}
+
+.stop-btn {
+    padding: 14px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #c75b5b;
+    color: white;
+}
+
+.stop-btn:hover {
+    opacity: 0.85;
+}
+
+.stop-btn:active {
+    opacity: 0.7;
+}
+
+/* Scrollbar for debug log */
+.debug-overlay::-webkit-scrollbar {
+    width: 4px;
+}
+
+.debug-overlay::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.debug-overlay::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}
+
+.debug-overlay::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}

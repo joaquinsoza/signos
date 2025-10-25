@@ -1,0 +1,54 @@
+# Rust (legacy - kept for Tauri backend only)
+tauri-app/src-tauri/target/
+# Cargo.lock files are kept for Tauri
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+# pnpm-lock.yaml  # We USE pnpm, so keep this file
+
+# Tauri build outputs
+**/dist/
+**/dist-ssr/
+**/.tauri/
+
+# Cloudflare
+.dev.vars
+.wrangler/
+wrangler.toml.backup
+
+# PNPM is USED - keep these files
+# pnpm-lock.yaml (keep)
+# pnpm-workspace.yaml (keep if needed)
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# Build artifacts
+build/
+dist/
+out/
+
+# Temporary files
+*.tmp
+.cache/
+**.dev.vars
