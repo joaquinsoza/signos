@@ -44,7 +44,3 @@ docker-compose.override.yml
 
 # Logs
 *.log
-
-# PDFs (except example)
-pdfs/*
-!pdfs/.gitkeep
