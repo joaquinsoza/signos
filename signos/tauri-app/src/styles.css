@@ -76,12 +76,14 @@ body {
     background: rgba(30, 30, 30, 0.95);
     border-radius: 12px;
     padding: 25px;
+    overflow-y: auto;
 }
 
 .settings-content {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    height: 100%;
 }
 
 .settings-content h2 {
@@ -274,4 +276,97 @@ body {
 
 .debug-overlay::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.5);
+}
+
+/* Sign Display Overlay - Full screen centered */
+.sign-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.sign-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.sign-container {
+    text-align: center;
+    max-width: 600px;
+    padding: 2rem;
+}
+
+/* Sign Image */
+.sign-image-wrapper {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    margin-bottom: 1.5rem;
+    animation: signPop 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.sign-image {
+    max-width: 400px;
+    max-height: 400px;
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+@keyframes signPop {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Sign Metadata */
+.sign-info {
+    color: white;
+}
+
+.sign-glosa {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.sign-definition {
+    font-size: 1.1rem;
+    color: #aaa;
+    font-style: italic;
+}
+
+/* Progress Indicator */
+.sign-progress {
+    margin-top: 1rem;
+    color: #666;
+    font-size: 1rem;
+}
+
+/* Speed animations */
+.sign-overlay.speed-slow .sign-image-wrapper {
+    animation-duration: 0.6s;
+}
+
+.sign-overlay.speed-fast .sign-image-wrapper {
+    animation-duration: 0.2s;
 }

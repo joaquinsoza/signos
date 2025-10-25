@@ -30,6 +30,24 @@
                 <select id="audioInput">
                     <option value="">Loading devices...</option>
                 </select>
+
+                <label for="signDurationInput">Sign Display Duration (ms):</label>
+                <input
+                    type="number"
+                    id="signDurationInput"
+                    min="500"
+                    max="5000"
+                    step="100"
+                    value="1500"
+                />
+
+                <label for="animationSpeedSelect">Animation Speed:</label>
+                <select id="animationSpeedSelect">
+                    <option value="slow">Slow</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="fast">Fast</option>
+                </select>
+
                 <div class="settings-buttons">
                     <button id="saveSettingsBtn" class="settings-btn">Save</button>
                     <button id="cancelSettingsBtn" class="settings-btn">Cancel</button>
@@ -49,6 +67,23 @@
                 <button id="stopBtn" class="stop-btn">Stop</button>
             </div>
         </div>
+
+        <!-- Sign Display Overlay (full screen) -->
+        <div id="signOverlay" class="sign-overlay hidden">
+            <div class="sign-container">
+                <div class="sign-image-wrapper">
+                    <img id="signImage" class="sign-image" src="" alt="Sign" />
+                </div>
+                <div class="sign-info">
+                    <div id="signGlosa" class="sign-glosa"></div>
+                    <div id="signDefinition" class="sign-definition"></div>
+                </div>
+                <div id="signProgress" class="sign-progress hidden">
+                    <span id="signCounter">1 / 3</span>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script type="module" src="/src/main.ts"></script>

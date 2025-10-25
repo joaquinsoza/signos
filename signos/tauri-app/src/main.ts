@@ -8,7 +8,26 @@ interface TranscriptMessage {
     text: string;
     is_final: boolean;
     timestamp: number;
-    latency_ms: number;
+    latency_ms?: number;
+}
+
+interface ImagePath {
+    path: string;
+    sequence: number;
+}
+
+interface SignInfo {
+    glosa: string;
+    images: ImagePath[];
+    definition: string;
+    confidence: number;
+}
+
+interface SignsMessage {
+    type: 'signs';
+    text: string;
+    signs: SignInfo[];
+    timestamp: number;
 }
 
 interface StatsMessage {
@@ -25,18 +44,22 @@ interface ErrorMessage {
     timestamp: number;
 }
 
-type ServerMessage = TranscriptMessage | StatsMessage | ErrorMessage;
+type ServerMessage = TranscriptMessage | SignsMessage | StatsMessage | ErrorMessage;
 type AppView = 'menu' | 'settings' | 'recording';
 
 interface AppConfig {
     workerUrl: string;
     selectedDeviceId: string;
+    signDisplayDuration: number;
+    animationSpeed: 'slow' | 'normal' | 'fast';
 }
 
 const CONFIG_FILE = 'config.json';
 const DEFAULT_CONFIG: AppConfig = {
     workerUrl: 'ws://localhost:8787',
     selectedDeviceId: '',
+    signDisplayDuration: 1500,
+    animationSpeed: 'normal',
 };
 
 class SignosClient {
@@ -48,6 +71,11 @@ class SignosClient {
     private isRecording: boolean = false;
     private workerUrl: string = 'ws://localhost:8787';
     private selectedDeviceId: string = '';
+
+    // Sign display state
+    private signDisplayQueue: SignInfo[] = [];
+    private isDisplayingSign: boolean = false;
+    private config: AppConfig = DEFAULT_CONFIG;
 
     private views: {
         menu: HTMLElement;
@@ -62,9 +90,18 @@ class SignosClient {
         stopBtn: HTMLButtonElement;
         workerUrlInput: HTMLInputElement;
         audioInputSelect: HTMLSelectElement;
+        signDurationInput: HTMLInputElement;
+        animationSpeedSelect: HTMLSelectElement;
         saveSettingsBtn: HTMLButtonElement;
         cancelSettingsBtn: HTMLButtonElement;
         debugLog: HTMLDivElement;
+        signOverlay: HTMLDivElement;
+        signImage: HTMLImageElement;
+        signGlosa: HTMLDivElement;
+        signDefinition: HTMLDivElement;
+        signProgress: HTMLDivElement;
+        signCounter: HTMLSpanElement;
+        beeImage: HTMLImageElement;
     };
 
     constructor() {
@@ -81,9 +118,18 @@ class SignosClient {
             stopBtn: document.getElementById('stopBtn') as HTMLButtonElement,
             workerUrlInput: document.getElementById('workerUrl') as HTMLInputElement,
             audioInputSelect: document.getElementById('audioInput') as HTMLSelectElement,
+            signDurationInput: document.getElementById('signDurationInput') as HTMLInputElement,
+            animationSpeedSelect: document.getElementById('animationSpeedSelect') as HTMLSelectElement,
             saveSettingsBtn: document.getElementById('saveSettingsBtn') as HTMLButtonElement,
             cancelSettingsBtn: document.getElementById('cancelSettingsBtn') as HTMLButtonElement,
             debugLog: document.getElementById('debugLog') as HTMLDivElement,
+            signOverlay: document.getElementById('signOverlay') as HTMLDivElement,
+            signImage: document.getElementById('signImage') as HTMLImageElement,
+            signGlosa: document.getElementById('signGlosa') as HTMLDivElement,
+            signDefinition: document.getElementById('signDefinition') as HTMLDivElement,
+            signProgress: document.getElementById('signProgress') as HTMLDivElement,
+            signCounter: document.getElementById('signCounter') as HTMLSpanElement,
+            beeImage: document.querySelector('#recordingView .bee-image') as HTMLImageElement,
         };
 
         this.initializeEventListeners();
@@ -104,13 +150,15 @@ class SignosClient {
 
             if (configExists) {
                 const configJson: string = await readTextFile(CONFIG_FILE, { baseDir: BaseDirectory.AppData });
-                const config: AppConfig = JSON.parse(configJson);
-                console.log('[Config] Loaded config:', config);
+                this.config = { ...DEFAULT_CONFIG, ...JSON.parse(configJson) };
+                console.log('[Config] Loaded config:', this.config);
 
-                this.workerUrl = config.workerUrl;
-                this.selectedDeviceId = config.selectedDeviceId;
+                this.workerUrl = this.config.workerUrl;
+                this.selectedDeviceId = this.config.selectedDeviceId;
 
                 this.elements.workerUrlInput.value = this.workerUrl;
+                this.elements.signDurationInput.value = String(this.config.signDisplayDuration);
+                this.elements.animationSpeedSelect.value = this.config.animationSpeed;
             } else {
                 console.log('[Config] Creating default config...');
                 await this.saveConfig();
@@ -123,11 +171,17 @@ class SignosClient {
 
     private async saveConfig(): Promise<void> {
         try {
-            const config: AppConfig = {
-                workerUrl: this.workerUrl,
-                selectedDeviceId: this.selectedDeviceId,
+            this.config = {
+                workerUrl: this.elements.workerUrlInput.value,
+                selectedDeviceId: this.elements.audioInputSelect.value,
+                signDisplayDuration: parseInt(this.elements.signDurationInput.value),
+                animationSpeed: this.elements.animationSpeedSelect.value as 'slow' | 'normal' | 'fast',
             };
-            console.log('[Config] Saving config:', config);
+
+            this.workerUrl = this.config.workerUrl;
+            this.selectedDeviceId = this.config.selectedDeviceId;
+
+            console.log('[Config] Saving config:', this.config);
 
             // Ensure directory exists
             try {
@@ -136,7 +190,7 @@ class SignosClient {
                 // Directory might already exist, ignore error
             }
 
-            await writeTextFile(CONFIG_FILE, JSON.stringify(config, null, 2), {
+            await writeTextFile(CONFIG_FILE, JSON.stringify(this.config, null, 2), {
                 baseDir: BaseDirectory.AppData,
             });
             console.log('[Config] Config saved successfully');
@@ -276,10 +330,13 @@ class SignosClient {
             this.ws = null;
         }
 
-        this.log('Recording stopped', 'success');
-
-        // Clear debug log
+        // Clear displays
+        this.signDisplayQueue = [];
+        this.elements.signOverlay.classList.add('hidden');
         this.elements.debugLog.innerHTML = '';
+        this.elements.beeImage.src = '/abeja_0.jpeg';
+
+        this.log('Recording stopped', 'success');
 
         this.showView('menu');
     }
@@ -341,6 +398,9 @@ class SignosClient {
                 case 'transcript':
                     this.handleTranscript(message);
                     break;
+                case 'signs':
+                    this.handleSigns(message);
+                    break;
                 case 'stats':
                     this.handleStats(message);
                     break;
@@ -357,16 +417,92 @@ class SignosClient {
     }
 
     private handleTranscript(message: TranscriptMessage): void {
-        this.log(`"${message.text}" (${message.latency_ms}ms)`, 'success');
+        if (message.is_final) {
+            this.log(`📝 "${message.text}"`, 'success');
+        } else {
+            // Log interim transcript
+            console.log(`[Transcript] Interim: "${message.text}"`);
+        }
+    }
+
+    private async handleSigns(message: SignsMessage): Promise<void> {
+        this.log(`🤟 ${message.signs.length} signs for: "${message.text}"`, 'success');
+
+        // Add to display queue
+        this.signDisplayQueue.push(...message.signs);
+
+        // Start displaying if not already
+        if (!this.isDisplayingSign) {
+            await this.displaySignQueue();
+        }
     }
 
     private handleStats(message: StatsMessage): void {
-        this.log(`Stats: ${message.chunks_processed} chunks, ${message.avg_latency_ms}ms avg`, 'info');
+        // Silently log stats to console only
+        console.log(`[Stats] ${message.chunks_processed} chunks, ${message.avg_latency_ms}ms avg`);
     }
 
     private handleError(message: ErrorMessage): void {
         this.log(`Server error: ${message.error}`, 'error');
     }
+
+    // ========================================
+    // Sign Display Queue System
+    // ========================================
+
+    private async displaySignQueue(): Promise<void> {
+        this.isDisplayingSign = true;
+
+        while (this.signDisplayQueue.length > 0) {
+            const sign = this.signDisplayQueue.shift()!;
+            await this.displaySign(sign);
+        }
+
+        this.isDisplayingSign = false;
+    }
+
+    private async displaySign(sign: SignInfo): Promise<void> {
+        const duration = this.config.signDisplayDuration || 1500;
+
+        console.log(`[SignDisplay] Showing: ${sign.glosa}`);
+        console.log(`[SignDisplay] Images:`, sign.images);
+
+        // Display image sequence by replacing bee background
+        if (sign.images.length > 1) {
+            // Multiple images = movement sequence
+            await this.displayImageSequence(sign.images, duration);
+        } else if (sign.images.length === 1) {
+            // Single static image
+            const imagePath = `/signs/${sign.images[0].path}`;
+            console.log(`[SignDisplay] Setting bee image src to: ${imagePath}`);
+            this.elements.beeImage.src = imagePath;
+
+            await this.sleep(duration);
+        }
+
+        // Reset to bee image
+        this.elements.beeImage.src = '/abeja_0.jpeg';
+    }
+
+    private async displayImageSequence(images: ImagePath[], totalDuration: number): Promise<void> {
+        const durationPerImage = totalDuration / images.length;
+
+        for (let i = 0; i < images.length; i++) {
+            const imagePath = `/signs/${images[i].path}`;
+            console.log(`[SignDisplay] Sequence ${i + 1}/${images.length}: ${imagePath}`);
+            this.elements.beeImage.src = imagePath;
+
+            await this.sleep(durationPerImage);
+        }
+    }
+
+    private sleep(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // ========================================
+    // Audio Capture
+    // ========================================
 
     private async startAudioCapture(): Promise<void> {
         this.log('Requesting audio access...', 'info');

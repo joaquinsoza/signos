@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signos Worker Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+        .status {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .status.disconnected { background: #fee; color: #c00; }
+        .status.connected { background: #efe; color: #060; }
+        .status.connecting { background: #ffa; color: #660; }
+
+        button {
+            background: #0066ff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+        button:hover { background: #0052cc; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+        }
+
+        .message {
+            margin: 0.5rem 0;
+            padding: 0.75rem;
+            border-left: 3px solid #ddd;
+            background: white;
+            font-size: 0.9rem;
+        }
+        .message.transcript { border-color: #0066ff; }
+        .message.signs { border-color: #00aa00; }
+        .message.error { border-color: #cc0000; }
+
+        .message-type {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        .sign-result {
+            display: inline-block;
+            background: #e8f4f8;
+            padding: 0.25rem 0.5rem;
+            margin: 0.25rem;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        #messageLog {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+
+        pre {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤟 Signos Worker Test</h1>
+
+        <div id="status" class="status disconnected">
+            Disconnected
+        </div>
+
+        <div class="test-section">
+            <h3>Connection</h3>
+            <button id="connectBtn" onclick="connect()">Connect to Worker</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Sign Translation</h3>
+            <p>Send test transcripts to see sign translation in action:</p>
+
+            <button onclick="sendTestTranscript('hola')">Test: "hola"</button>
+            <button onclick="sendTestTranscript('necesito agua')">Test: "necesito agua"</button>
+            <button onclick="sendTestTranscript('hola cómo estás')">Test: "hola cómo estás"</button>
+            <button onclick="sendTestTranscript('buenos días')">Test: "buenos días"</button>
+
+            <div style="margin-top: 1rem;">
+                <input
+                    type="text"
+                    id="customText"
+                    placeholder="Enter custom text..."
+                    style="padding: 0.5rem; width: 300px; border: 1px solid #ddd; border-radius: 4px;"
+                />
+                <button onclick="sendCustom()">Send Custom</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>Message Log</h3>
+            <div id="messageLog"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        const statusEl = document.getElementById('status');
+        const messageLog = document.getElementById('messageLog');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+
+        function updateStatus(status, message) {
+            statusEl.className = `status ${status}`;
+            statusEl.textContent = message;
+        }
+
+        function logMessage(type, data) {
+            const msg = document.createElement('div');
+            msg.className = `message ${type}`;
+
+            const typeLabel = document.createElement('div');
+            typeLabel.className = 'message-type';
+            typeLabel.textContent = type;
+            msg.appendChild(typeLabel);
+
+            if (type === 'transcript') {
+                const text = document.createElement('div');
+                text.textContent = `"${data.text}" ${data.is_final ? '(final)' : '(interim)'}`;
+                msg.appendChild(text);
+            } else if (type === 'signs') {
+                const text = document.createElement('div');
+                text.innerHTML = `For: <strong>"${data.text}"</strong>`;
+                msg.appendChild(text);
+
+                const signs = document.createElement('div');
+                signs.style.marginTop = '0.5rem';
+                data.signs.forEach(sign => {
+                    const signEl = document.createElement('span');
+                    signEl.className = 'sign-result';
+                    signEl.textContent = `${sign.glosa} (${(sign.confidence * 100).toFixed(0)}%)`;
+                    signEl.title = sign.definition || '';
+                    signs.appendChild(signEl);
+                });
+                msg.appendChild(signs);
+
+                // Show raw JSON
+                const details = document.createElement('details');
+                details.style.marginTop = '0.5rem';
+                const summary = document.createElement('summary');
+                summary.textContent = 'View JSON';
+                summary.style.cursor = 'pointer';
+                details.appendChild(summary);
+                const pre = document.createElement('pre');
+                pre.textContent = JSON.stringify(data.signs, null, 2);
+                details.appendChild(pre);
+                msg.appendChild(details);
+            } else if (type === 'error') {
+                const text = document.createElement('div');
+                text.textContent = data.error;
+                msg.appendChild(text);
+            } else {
+                const pre = document.createElement('pre');
+                pre.textContent = JSON.stringify(data, null, 2);
+                msg.appendChild(pre);
+            }
+
+            messageLog.insertBefore(msg, messageLog.firstChild);
+        }
+
+        function connect() {
+            if (ws) {
+                console.log('Already connected');
+                return;
+            }
+
+            updateStatus('connecting', 'Connecting...');
+
+            ws = new WebSocket('ws://localhost:8787');
+
+            ws.onopen = () => {
+                updateStatus('connected', 'Connected to worker');
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                console.log('WebSocket connected');
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    console.log('Received:', message);
+
+                    switch (message.type) {
+                        case 'transcript':
+                            logMessage('transcript', message);
+                            break;
+                        case 'signs':
+                            logMessage('signs', message);
+                            break;
+                        case 'error':
+                            logMessage('error', message);
+                            break;
+                        case 'stats':
+                            // Ignore stats for cleaner UI
+                            break;
+                        default:
+                            console.log('Unknown message type:', message);
+                    }
+                } catch (e) {
+                    console.error('Failed to parse message:', e);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateStatus('disconnected', 'Connection error');
+            };
+
+            ws.onclose = () => {
+                updateStatus('disconnected', 'Disconnected');
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                ws = null;
+                console.log('WebSocket closed');
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        function sendTestTranscript(text) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                alert('Please connect first!');
+                return;
+            }
+
+            // Simulate sending a final transcript
+            // Note: Worker expects audio data, but we're testing the sign translation part
+            // In mock mode, the worker will generate transcripts automatically
+            // For real testing, we can just log what we would send
+
+            console.log(`Would test with: "${text}"`);
+            alert(`Worker is in audio mode. To test sign translation:\n\n1. Use mock mode in worker\n2. Or manually trigger with the Tauri client\n3. Or check worker logs when it receives: "${text}"`);
+        }
+
+        function sendCustom() {
+            const text = document.getElementById('customText').value;
+            if (text.trim()) {
+                sendTestTranscript(text);
+            }
+        }
+
+        // Auto-connect on load
+        window.onload = () => {
+            console.log('Page loaded - click Connect to start');
+        };
+    </script>
+</body>
+</html>
