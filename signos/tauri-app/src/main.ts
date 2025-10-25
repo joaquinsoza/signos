@@ -102,7 +102,7 @@ class SignosClient {
         signDefinition: HTMLDivElement;
         signProgress: HTMLDivElement;
         signCounter: HTMLSpanElement;
-        beeImage: HTMLImageElement;
+        bgImage: HTMLImageElement;
     };
 
     private isDebugVisible: boolean = false;
@@ -133,7 +133,7 @@ class SignosClient {
             signDefinition: document.getElementById('signDefinition') as HTMLDivElement,
             signProgress: document.getElementById('signProgress') as HTMLDivElement,
             signCounter: document.getElementById('signCounter') as HTMLSpanElement,
-            beeImage: document.querySelector('#recordingView .bee-image') as HTMLImageElement,
+            bgImage: document.querySelector('#recordingView .bg-image') as HTMLImageElement,
         };
 
         this.initializeEventListeners();
@@ -512,21 +512,21 @@ class SignosClient {
         console.log(`[SignDisplay] Showing: ${sign.glosa}`);
         console.log(`[SignDisplay] Images:`, sign.images);
 
-        // Display image sequence by replacing bee background
+        // Display image sequence by replacing background image
         if (sign.images.length > 1) {
             // Multiple images = movement sequence
             await this.displayImageSequence(sign.images, duration);
         } else if (sign.images.length === 1) {
             // Single static image
             const imagePath = `/signs/${sign.images[0].path}`;
-            console.log(`[SignDisplay] Setting bee image src to: ${imagePath}`);
-            this.elements.beeImage.src = imagePath;
+            console.log(`[SignDisplay] Setting background image src to: ${imagePath}`);
+            this.elements.bgImage.src = imagePath;
 
             await this.sleep(duration);
         }
 
-        // Reset to bee image
-        this.elements.beeImage.src = '/abeja_0.jpeg';
+        // Reset to background image
+        this.elements.bgImage.src = '/bg.png';
     }
 
     private async displayImageSequence(images: ImagePath[], totalDuration: number): Promise<void> {
@@ -535,7 +535,7 @@ class SignosClient {
         for (let i = 0; i < images.length; i++) {
             const imagePath = `/signs/${images[i].path}`;
             console.log(`[SignDisplay] Sequence ${i + 1}/${images.length}: ${imagePath}`);
-            this.elements.beeImage.src = imagePath;
+            this.elements.bgImage.src = imagePath;
 
             await this.sleep(durationPerImage);
         }
