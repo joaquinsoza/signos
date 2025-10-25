@@ -34,10 +34,13 @@ services:
       DB_USER: ${DB_USER:-signos}
       DB_PASSWORD: ${DB_PASSWORD}
       PYTHONUNBUFFERED: 1
+      CF_ACCOUNT: ${CF_ACCOUNT}
+      CF_API_TOKEN: ${CF_API_TOKEN}
     volumes:
       - ./src:/app/src
       - ./pdfs:/app/pdfs
       - ./output:/app/output
+      - ./scripts:/app/scripts
     working_dir: /app
     networks:
       - signos_network

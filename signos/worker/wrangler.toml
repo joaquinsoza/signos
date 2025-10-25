@@ -5,6 +5,10 @@ compatibility_date = "2024-09-23"
 [ai]
 binding = "AI"
 
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "signos-lsch-index"
+
 # Environment variables (set these via wrangler secret put or dashboard)
 # Set MOCK_MODE via: wrangler secret put MOCK_MODE
 # For dev, use .dev.vars file
