@@ -1,0 +1,17 @@
+{
+  "name": "signos-stt-worker",
+  "version": "0.1.0",
+  "description": "Signos Real-time Speech-to-Text Worker",
+  "main": "src/index.ts",
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "dev:remote": "wrangler dev --remote",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251014.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.45.0"
+  }
+}
