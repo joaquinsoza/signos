@@ -1,0 +1,11 @@
+name = "signos-worker"
+main = "src/index.ts"
+compatibility_date = "2025-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "signos"
+
+[ai]
+binding = "AI"
