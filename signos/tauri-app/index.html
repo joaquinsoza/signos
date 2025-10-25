@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signos</title>
+    <link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Menu View (Idle State) -->
+        <div id="menuView" class="view">
+            <button id="startBtn" class="menu-btn">Start Recording</button>
+            <button id="settingsBtn" class="menu-btn">Settings</button>
+            <button id="exitBtn" class="menu-btn">Exit</button>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settingsView" class="view hidden">
+            <div class="settings-content">
+                <h2>Settings</h2>
+                <label for="workerUrl">Worker URL:</label>
+                <input
+                    type="text"
+                    id="workerUrl"
+                    placeholder="ws://localhost:8787"
+                    value="ws://localhost:8787"
+                />
+                <div class="settings-buttons">
+                    <button id="saveSettingsBtn" class="settings-btn">Save</button>
+                    <button id="cancelSettingsBtn" class="settings-btn">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recording View -->
+        <div id="recordingView" class="view hidden">
+            <img src="/abeja_0.jpeg" alt="Sign Language" class="bee-image" />
+
+            <!-- Debug Log Overlay -->
+            <div id="debugLog" class="debug-overlay"></div>
+
+            <!-- Stop Button Overlay (visible on hover) -->
+            <div id="stopOverlay" class="stop-overlay">
+                <button id="stopBtn" class="stop-btn">Stop</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
