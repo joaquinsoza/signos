@@ -15,7 +15,7 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: '¡Hola! 🤟 Soy tu asistente de Lengua de Señas Chilena (LSCh).\n\n¿En qué puedo ayudarte?\n\n🔍 Pregúntame "¿cómo se dice...?" para buscar señas\n📚 Pregúntame sobre la historia de LSCh\n💡 Consulta sobre gramática, cultura o la comunidad sorda\n🗣️ Conversa libremente sobre LSCh',
+      content: '¡Hola! 🤟 Soy tu asistente de Lengua de Señas Chilena.\n\n¿En qué puedo ayudarte?',
     },
   ]);
   const [input, setInput] = useState('');
