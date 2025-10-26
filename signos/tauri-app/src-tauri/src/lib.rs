@@ -69,8 +69,8 @@ pub fn run() {
 
                 // Calculate bottom-right corner position
                 // Add padding from edges (20px from right and bottom)
-                let x = screen_size.width as i32 - window_width - 200;
-                let y = screen_size.height as i32 - window_height + 30;
+                let x = screen_size.width as i32 - window_width - 300;
+                let y = screen_size.height as i32 - window_height - 400;
 
                 // Position window in bottom-right corner
                 window.set_position(tauri::Position::Physical(tauri::PhysicalPosition {
