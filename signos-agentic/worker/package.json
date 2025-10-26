@@ -1,0 +1,29 @@
+{
+  "name": "signos-agentic-worker",
+  "version": "1.0.0",
+  "description": "Agentic AI Worker for Sign Language Learning Platform",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create signos-agentic-db",
+    "db:init": "wrangler d1 execute signos-agentic-db --file=./schema.sql --remote",
+    "db:init-local": "wrangler d1 execute signos-agentic-db --file=./schema.sql --local",
+    "kv:create": "wrangler kv:namespace create SESSIONS"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "ai",
+    "sign-language",
+    "education"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^3.90.0"
+  }
+}
+
