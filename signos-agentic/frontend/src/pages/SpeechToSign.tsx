@@ -44,6 +44,7 @@ export default function SpeechToSign() {
   const [interimTranscript, setInterimTranscript] = useState('');
   const [currentSigns, setCurrentSigns] = useState<Sign[]>([]);
   const [currentSignIndex, setCurrentSignIndex] = useState(0);
+  const [showSignPopup, setShowSignPopup] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
@@ -51,6 +52,7 @@ export default function SpeechToSign() {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioWorkletNodeRef = useRef<AudioWorkletNode | null>(null);
   const displayTimeoutRef = useRef<number | null>(null);
+  const signDelayTimeoutRef = useRef<number | null>(null);
 
   const connectWebSocket = async (): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -87,9 +89,19 @@ export default function SpeechToSign() {
               
             case 'signs':
               console.log('[Signs] Received', message.signs.length, 'signs');
-              setCurrentSigns(message.signs);
-              setCurrentSignIndex(0);
-              displaySignSequence(message.signs);
+              
+              // Clear any existing delay
+              if (signDelayTimeoutRef.current) {
+                clearTimeout(signDelayTimeoutRef.current);
+              }
+              
+              // Wait 3 seconds before showing signs popup
+              signDelayTimeoutRef.current = window.setTimeout(() => {
+                setCurrentSigns(message.signs);
+                setCurrentSignIndex(0);
+                setShowSignPopup(true);
+                displaySignSequence(message.signs);
+              }, 3000);
               break;
               
             case 'error':
@@ -183,6 +195,10 @@ export default function SpeechToSign() {
     if (displayTimeoutRef.current) {
       clearTimeout(displayTimeoutRef.current);
     }
+    
+    if (signDelayTimeoutRef.current) {
+      clearTimeout(signDelayTimeoutRef.current);
+    }
   };
 
   const toggleListening = async () => {
@@ -203,6 +219,7 @@ export default function SpeechToSign() {
       setTranscript('');
       setInterimTranscript('');
       setCurrentSigns([]);
+      setShowSignPopup(false);
     }
   };
 
@@ -213,7 +230,9 @@ export default function SpeechToSign() {
       index++;
       if (index >= signs.length) {
         clearInterval(interval);
+        // Close popup after showing all signs
         setTimeout(() => {
+          setShowSignPopup(false);
           setCurrentSigns([]);
         }, 2000);
       } else {
@@ -222,11 +241,16 @@ export default function SpeechToSign() {
     }, 2000);
   };
 
+  const handleClosePopup = () => {
+    setShowSignPopup(false);
+    setCurrentSigns([]);
+  };
+
   const currentSign = currentSigns[currentSignIndex];
   const currentImage = currentSign?.images?.[0]?.path;
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gray-900 text-white relative">
       {/* Header */}
       <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
@@ -247,11 +271,8 @@ export default function SpeechToSign() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* Left: Controls & Transcript */}
-          <div className="space-y-6">
+      <div className="max-w-2xl mx-auto px-6 py-12">
+        <div className="space-y-6">
             {/* Microphone Control */}
             <div className="bg-gray-800 rounded-2xl p-8 text-center space-y-6">
               <h2 className="text-xl font-semibold">Control de Micrófono</h2>
@@ -324,54 +345,85 @@ export default function SpeechToSign() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-primary">4.</span>
-                  <span>Las señas aparecerán automáticamente</span>
+                  <span>Las señas aparecerán en un popup después de 3 segundos</span>
                 </li>
               </ul>
+              
+              <div className="bg-blue-500/10 border border-blue-500/50 rounded-lg p-3 text-sm text-blue-200">
+                💡 <strong>Tip:</strong> Las señas se mostrarán en la esquina superior derecha 3 segundos después de que termines de hablar.
+              </div>
             </div>
-          </div>
-
-          {/* Right: Sign Display */}
-          <div className="bg-gray-800 rounded-2xl p-8 flex flex-col items-center justify-center min-h-[600px]">
-            {currentSign ? (
-              <div className="space-y-6 text-center w-full">
-                <div className="relative w-full aspect-square max-w-md mx-auto bg-gray-900 rounded-xl overflow-hidden">
-                  {currentImage ? (
-                    <img
-                      src={`/signs/${currentImage}`}
-                      alt={currentSign.glosa}
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-500">
-                      Sin imagen
-                    </div>
-                  )}
-                </div>
-                
-                <div>
-                  <h2 className="text-4xl font-bold mb-2">{currentSign.glosa}</h2>
-                  <p className="text-gray-400 text-lg">{currentSign.definition}</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Confianza: {Math.round(currentSign.confidence * 100)}%
-                  </p>
-                  
-                  {currentSigns.length > 1 && (
-                    <p className="text-sm text-primary mt-4">
-                      Seña {currentSignIndex + 1} de {currentSigns.length}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center text-gray-500 space-y-4">
-                <div className="text-6xl mb-4">🤟</div>
-                <p className="text-xl">Las señas aparecerán aquí</p>
-                <p className="text-sm">Activa el micrófono y comienza a hablar</p>
-              </div>
-            )}
-          </div>
         </div>
       </div>
+
+      {/* Sign Popup - Top Right Corner */}
+      {showSignPopup && currentSign && (
+        <div className="fixed top-4 right-4 z-50 animate-fade-in">
+          <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden max-w-sm">
+            {/* Close button */}
+            <button
+              onClick={handleClosePopup}
+              className="absolute top-2 right-2 z-10 bg-gray-900/80 hover:bg-gray-900 rounded-full p-2 transition"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Sign Image */}
+            <div className="relative aspect-square bg-gray-900">
+              {currentImage ? (
+                <img
+                  src={`/signs/${currentImage}`}
+                  alt={currentSign.glosa}
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-500">
+                  Cargando...
+                </div>
+              )}
+            </div>
+
+            {/* Sign Info */}
+            <div className="p-4 space-y-2">
+              <h3 className="text-2xl font-bold">{currentSign.glosa}</h3>
+              <p className="text-sm text-gray-400">{currentSign.definition}</p>
+              
+              {currentSigns.length > 1 && (
+                <div className="flex items-center gap-2 pt-2">
+                  <div className="flex-1 h-1 bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300"
+                      style={{ width: `${((currentSignIndex + 1) / currentSigns.length) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-500">
+                    {currentSignIndex + 1}/{currentSigns.length}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }
