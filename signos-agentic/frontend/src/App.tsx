@@ -7,7 +7,7 @@ function App() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full max-h-screen">
           
           {/* Left Side - Chat Interface */}
-          <div className="flex flex-col">
+          <div className="flex flex-col h-full min-h-0">
             <ChatInterface />
           </div>
 
