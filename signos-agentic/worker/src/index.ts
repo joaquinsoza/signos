@@ -95,16 +95,44 @@ async function handleChat(request: Request, env: Env, corsHeaders: any): Promise
   // Use anonymous session
   const sessionId = body.session_id || `session_${Date.now()}`;
 
+  // Load chat history from KV
+  let chatHistory: ChatMessage[] = [];
+  try {
+    const historyJson = await env.SESSIONS.get(`history:${sessionId}`);
+    if (historyJson) {
+      chatHistory = JSON.parse(historyJson);
+    }
+  } catch (error) {
+    console.error('[Chat] Failed to load history:', error);
+  }
+
   // Build minimal context (no user, no lessons)
   const context: AgentContext = {
     user: null,
     current_lesson: null,
-    chat_history: [],
+    chat_history: chatHistory,
     available_lessons: [],
   };
 
   // Process message with agentic reasoning
   const response = await agenticService.processMessage(body.message, context);
+
+  // Save updated history to KV
+  try {
+    const updatedHistory = [
+      ...chatHistory,
+      { role: 'user', content: body.message, timestamp: Date.now() },
+      { role: 'assistant', content: response.message, timestamp: Date.now() },
+    ].slice(-20); // Keep last 20 messages (10 exchanges)
+    
+    await env.SESSIONS.put(
+      `history:${sessionId}`,
+      JSON.stringify(updatedHistory),
+      { expirationTtl: 3600 } // 1 hour expiration
+    );
+  } catch (error) {
+    console.error('[Chat] Failed to save history:', error);
+  }
 
   return jsonResponse({
     success: true,
