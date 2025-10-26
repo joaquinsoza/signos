@@ -303,6 +303,12 @@ export default function SpeechToSign() {
             {/* Instructions */}
             <div className="bg-gray-800 rounded-2xl p-6 space-y-3">
               <h3 className="text-lg font-semibold">Instrucciones</h3>
+              
+              {/* Disclaimer */}
+              <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-lg p-3 text-sm text-yellow-200">
+                ⏱️ <strong>Nota:</strong> La primera conexión puede demorar unos segundos en iniciar.
+              </div>
+
               <ul className="space-y-2 text-gray-400 text-sm">
                 <li className="flex items-start gap-2">
                   <span className="text-primary">1.</span>
