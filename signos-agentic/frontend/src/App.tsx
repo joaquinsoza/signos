@@ -3,7 +3,57 @@ import ChatInterface from './components/ChatInterface';
 function App() {
   return (
     <div className="min-h-screen bg-gray-900">
-      <div className="container mx-auto px-4 py-8 h-screen">
+      {/* Mobile Landing - Show on small screens */}
+      <div className="lg:hidden min-h-screen flex flex-col items-center justify-center px-6 text-white">
+        <div className="max-w-md w-full space-y-8">
+          {/* Logo/Header */}
+          <div className="text-center space-y-4">
+            <span className="text-6xl">🤟</span>
+            <h1 className="text-3xl font-bold">
+              Lengua de Señas Chilena
+            </h1>
+            <p className="text-gray-400">
+              Aprende LSCh con IA
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-4">
+            <a
+              href="/chat"
+              className="block w-full bg-primary hover:bg-primary-dark text-white text-center py-4 rounded-lg font-semibold text-lg transition-all duration-200"
+            >
+              💬 Chat con IA
+            </a>
+            
+            <a
+              href="/speech-to-sign"
+              className="block w-full bg-purple-600 hover:bg-purple-700 text-white text-center py-4 rounded-lg font-semibold text-lg transition-all duration-200"
+            >
+              🎤 Voz a Señas
+            </a>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4 pt-8 border-t border-gray-700">
+            <div className="text-center">
+              <div className="text-xl font-bold text-primary">2,123</div>
+              <div className="text-xs text-gray-400">Señas</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-primary">418</div>
+              <div className="text-xs text-gray-400">Recursos</div>
+            </div>
+            <div className="text-center">
+              <div className="text-xl font-bold text-primary">100%</div>
+              <div className="text-xs text-gray-400">Gratis</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Layout */}
+      <div className="hidden lg:block container mx-auto px-4 py-8 h-screen">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full max-h-screen">
           
           {/* Left Side - Chat Interface */}
@@ -12,7 +62,7 @@ function App() {
           </div>
 
           {/* Right Side - Landing Info */}
-          <div className="hidden lg:flex flex-col justify-center text-white space-y-4 px-8 py-4">
+          <div className="flex flex-col justify-center text-white space-y-4 px-8 py-4">
             
             {/* Hero Section */}
             <div className="space-y-2">
