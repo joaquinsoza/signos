@@ -1,0 +1,29 @@
+name = "signos-agentic-worker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# AI binding for conversational agent
+[ai]
+binding = "AI"
+
+# Vectorize binding for sign lookup
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "signos-lsch-index"
+
+# D1 database for user progress
+[[d1_databases]]
+binding = "DB"
+database_name = "signos-agentic-db"
+database_id = "placeholder" # Will be created with wrangler d1 create
+
+# KV for session management
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "placeholder" # Will be created
+
+# Remote mode for local development
+[dev]
+remote = true
+
