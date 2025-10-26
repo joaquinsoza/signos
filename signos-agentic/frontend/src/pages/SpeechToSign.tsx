@@ -273,8 +273,8 @@ export default function SpeechToSign() {
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-6 py-12">
         <div className="space-y-6">
-            {/* Microphone Control */}
-            <div className="bg-gray-800 rounded-2xl p-8 text-center space-y-6">
+            {/* Microphone Control - Always first on mobile */}
+            <div className="bg-gray-800 rounded-2xl p-8 text-center space-y-6 order-1">
               <h2 className="text-xl font-semibold">Control de Micrófono</h2>
               
               <button
@@ -307,22 +307,8 @@ export default function SpeechToSign() {
               )}
             </div>
 
-            {/* Transcript Display */}
-            <div className="bg-gray-800 rounded-2xl p-6 min-h-[200px]">
-              <h3 className="text-lg font-semibold mb-4">Transcripción</h3>
-              <div className="text-2xl">
-                <div className="text-gray-300">{transcript}</div>
-                <div className="text-gray-500 italic">{interimTranscript}</div>
-                {!transcript && !interimTranscript && (
-                  <span className="text-gray-500 italic">
-                    {isListening ? 'Habla ahora...' : 'Activa el micrófono para comenzar'}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Instructions */}
-            <div className="bg-gray-800 rounded-2xl p-6 space-y-3">
+            {/* Instructions - Second on mobile */}
+            <div className="bg-gray-800 rounded-2xl p-6 space-y-3 order-2 lg:order-3">
               <h3 className="text-lg font-semibold">Instrucciones</h3>
               
               {/* Disclaimer */}
@@ -351,6 +337,20 @@ export default function SpeechToSign() {
               
               <div className="bg-blue-500/10 border border-blue-500/50 rounded-lg p-3 text-sm text-blue-200">
                 💡 <strong>Tip:</strong> Las señas se mostrarán en la esquina superior derecha 3 segundos después de que termines de hablar.
+              </div>
+            </div>
+
+            {/* Transcript Display - Last on mobile */}
+            <div className="bg-gray-800 rounded-2xl p-6 min-h-[200px] order-3 lg:order-2">
+              <h3 className="text-lg font-semibold mb-4">Transcripción</h3>
+              <div className="text-2xl">
+                <div className="text-gray-300">{transcript}</div>
+                <div className="text-gray-500 italic">{interimTranscript}</div>
+                {!transcript && !interimTranscript && (
+                  <span className="text-gray-500 italic">
+                    {isListening ? 'Habla ahora...' : 'Activa el micrófono para comenzar'}
+                  </span>
+                )}
               </div>
             </div>
         </div>
