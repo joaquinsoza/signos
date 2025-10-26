@@ -9,13 +9,28 @@ export class SignMatcher {
    */
   async findSigns(text: string): Promise<SignWithImages[]> {
     try {
+      // Check if Vectorize is available
+      if (!this.env.VECTORIZE) {
+        console.warn('[SignMatcher] Vectorize not available');
+        return [];
+      }
+
       // Get embedding for the search text
       const embedding = await this.getEmbedding(text);
       
+      console.log(`[SignMatcher] Searching for: "${text}"`);
+      
       // Query Vectorize
       const results = await this.env.VECTORIZE.query(embedding, {
-        topK: 5,
+        topK: 10,
+        returnValues: true,
+        returnMetadata: 'all',
       });
+
+      console.log(`[SignMatcher] Found ${results.matches.length} matches`);
+      if (results.matches.length > 0) {
+        console.log(`[SignMatcher] Top match: "${results.matches[0].metadata?.glosa}" (score: ${results.matches[0].score})`);
+      }
 
       // Parse results
       return this.parseVectorizeResults(results);
@@ -88,11 +103,29 @@ export class SignMatcher {
    * Generate embedding for text
    */
   private async getEmbedding(text: string): Promise<number[]> {
-    const response = await this.env.AI.run('@cf/baai/bge-base-en-v1.5', {
-      text: [text],
-    });
+    try {
+      const response: any = await this.env.AI.run('@cf/baai/bge-base-en-v1.5', {
+        text: [text],
+      });
 
-    return response.data[0];
+      console.log('[SignMatcher] Embedding response type:', typeof response, Array.isArray(response));
+
+      // Workers AI returns the embeddings in different formats depending on the model
+      if (response && response.data && Array.isArray(response.data) && response.data.length > 0) {
+        return response.data[0];
+      } else if (Array.isArray(response) && response.length > 0) {
+        return response[0];
+      } else if (response && typeof response === 'object' && 'shape' in response && 'data' in response) {
+        // Handle tensor format
+        return response.data;
+      } else {
+        console.error('[SignMatcher] Unexpected embedding response:', JSON.stringify(response).substring(0, 200));
+        throw new Error('Unexpected embedding response format');
+      }
+    } catch (error) {
+      console.error('[SignMatcher] Error generating embedding:', error);
+      throw error;
+    }
   }
 
   /**

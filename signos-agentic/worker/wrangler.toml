@@ -12,18 +12,23 @@ binding = "AI"
 binding = "VECTORIZE"
 index_name = "signos-lsch-index"
 
+# Knowledge Vectorize binding for educational content
+[[vectorize]]
+binding = "KNOWLEDGE_VECTORIZE"
+index_name = "signos-knowledge-index"
+
 # D1 database for user progress
 [[d1_databases]]
 binding = "DB"
 database_name = "signos-agentic-db"
-database_id = "placeholder" # Will be created with wrangler d1 create
+database_id = "b26a466b-5cbf-4be1-b484-df3e55ba59b3" 
 
 # KV for session management
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "placeholder" # Will be created
+id = "8bc28ee8b0d142459c9a9c887efe6a08" 
 
-# Remote mode for local development
+# Development configuration
 [dev]
-remote = true
+# Local development uses local D1 database by default
 

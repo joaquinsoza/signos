@@ -1,0 +1,153 @@
+GRAMÁTICA Y ESTRUCTURA LINGÜÍSTICA DE LA LENGUA DE SEÑAS CHILENA (LSCh)
+
+Introducción a la LSCh como Lengua Natural
+
+La Lengua de Señas Chilena (LSCh) es una lengua natural completa con su propia gramática, estructura y reglas lingüísticas. No es un sistema de comunicación simplificado ni una versión gestual del español. La LSCh tiene una estructura gramatical completamente diferente del español hablado o escrito.
+
+Como lengua visuoespacial, la LSCh utiliza recursos que no están disponibles en las lenguas orales: el espacio tridimensional frente al señante, el movimiento, la orientación de las manos, las expresiones faciales y los movimientos corporales. Todos estos elementos son gramaticales y portadores de significado lingüístico.
+
+Parámetros Formativos de las Señas
+
+Cada seña en LSCh se compone de varios parámetros formativos simultáneos. Estos son los elementos mínimos que distinguen una seña de otra:
+
+1. Configuración de la Mano
+La forma que adopta la mano al realizar una seña. Existen más de 50 configuraciones distintas en LSCh, cada una puede cambiar completamente el significado de una seña. Por ejemplo, cambiar solo la configuración de la mano puede convertir la seña para "padre" en la seña para "madre".
+
+2. Ubicación
+El lugar en el espacio o en el cuerpo donde se realiza la seña. Las señas pueden realizarse en la cabeza, cara, cuello, torso, brazos, o en el espacio neutral frente al cuerpo. La ubicación es un parámetro distintivo crucial.
+
+3. Movimiento
+La trayectoria y tipo de movimiento que realizan las manos. Los movimientos pueden ser:
+- Lineales (rectos, curvos, circulares)
+- Alternados o simultáneos (cuando se usan ambas manos)
+- Repetidos o únicos
+- Con cambios de velocidad o tensión
+
+4. Orientación de la Palma
+La dirección hacia la cual apunta la palma de la mano durante la seña. La orientación puede ser hacia arriba, abajo, hacia el señante, hacia afuera, o en ángulos específicos.
+
+5. Componentes No Manuales
+Las expresiones faciales, movimientos de la cabeza, posición del cuerpo y la mirada. Estos elementos son gramaticales y obligatorios en muchos contextos, no son meramente expresivos o emocionales.
+
+Gramática Espacial
+
+Una característica fundamental de la LSCh es su uso del espacio para expresar relaciones gramaticales:
+
+Uso del Espacio para Referencias
+Los referentes (personas, objetos, lugares) se establecen en puntos específicos del espacio frente al señante. Una vez establecido un referente en un punto, se puede hacer referencia a él señalando o dirigiendo el movimiento de las señas hacia ese punto.
+
+Por ejemplo, si al hablar de María se establece su referente a la derecha del señante, todas las referencias posteriores a María (pronombres, concordancia verbal) se dirigirán hacia ese punto espacial.
+
+Verbos Direccionales
+Muchos verbos en LSCh modifican su movimiento para indicar el sujeto y el objeto de la acción. Por ejemplo, la seña "DAR" comienza en la ubicación espacial del sujeto y se mueve hacia la ubicación del objeto, incorporando gramaticalmente quién da y quién recibe.
+
+Clasificadores
+
+Los clasificadores son un sistema gramatical complejo en LSCh. Son configuraciones de mano que representan categorías de objetos y muestran su ubicación, movimiento y características físicas. Por ejemplo:
+
+- Clasificadores de vehículos (representan movimiento de autos, buses, etc.)
+- Clasificadores de personas (muestran posición y movimiento de personas)
+- Clasificadores de formas (describen tamaño y forma de objetos)
+
+Los clasificadores permiten descripciones visuales muy precisas y son fundamentales en la narrativa en LSCh.
+
+Componentes No Manuales Gramaticales
+
+Las expresiones faciales y movimientos corporales en LSCh no son meramente emocionales, sino que cumplen funciones gramaticales específicas:
+
+Marcadores de Preguntas
+Las preguntas en LSCh se marcan obligatoriamente con expresiones faciales específicas:
+- Preguntas sí/no: cejas levantadas, ojos abiertos, inclinación de cabeza hacia adelante
+- Preguntas qu-: cejas fruncidas, ligero movimiento de cabeza
+
+Negación
+La negación se marca con movimiento de cabeza (de lado a lado) que co-ocurre con las señas manuales. También puede utilizarse una expresión facial específica.
+
+Topicalización
+Para indicar que algo es el tema de la oración, se levanta ligeramente, se inclina la cabeza y se marca con una expresión facial específica.
+
+Estructura Oracional
+
+A diferencia del español, que tiene un orden básico Sujeto-Verbo-Objeto (SVO), la LSCh es más flexible pero tiende a usar patrones como:
+
+- Tópico-Comentario: El elemento sobre el cual se habla se presenta primero
+- Sujeto-Objeto-Verbo (SOV): Común en oraciones transitivas
+- Orden libre con marcas espaciales
+
+Ejemplo conceptual:
+Español: "María le dio un libro a Juan"
+LSCh (estructura básica): MARÍA (establecida en punto A) JUAN (establecido en punto B) LIBRO DAR[A→B]
+
+El verbo "DAR" se ejecuta moviéndose desde el punto espacial de María hacia el punto espacial de Juan, incorporando gramaticalmente quién da y quién recibe.
+
+Modificación Aspectual
+
+Los verbos en LSCh pueden modificarse para expresar aspecto (cómo se desarrolla la acción en el tiempo):
+
+- Aspecto habitual: movimiento repetido regular
+- Aspecto durativo: movimiento prolongado
+- Aspecto intensivo: movimiento tenso, enfático
+- Aspecto incoativo: movimiento breve, repentino
+
+Estas modificaciones se realizan cambiando características del movimiento de la seña, no agregando palabras adicionales.
+
+Modalidad y Tiempo
+
+La LSCh expresa tiempo principalmente mediante señas léxicas temporales (AYER, MAÑANA, FUTURO, PASADO) y líneas temporales espaciales:
+
+- Pasado: espacio detrás del hombro
+- Presente: espacio inmediatamente frente al cuerpo
+- Futuro: espacio hacia adelante
+
+La modalidad (posibilidad, obligación, deseo) se expresa mediante señas modales específicas y mediante expresiones faciales y corporales que modifican el significado de la oración.
+
+Incorporación Nominal
+
+Un fenómeno interesante en LSCh es la incorporación nominal, donde el objeto de un verbo se incorpora a la seña del verbo mismo. Por ejemplo, los verbos de comer pueden incorporar el tipo de comida en su realización (COMER-MANZANA es diferente de COMER-SOPA).
+
+Diferencias con el Español
+
+Es fundamental entender que la LSCh NO es español signado. Las principales diferencias incluyen:
+
+1. Orden de palabras diferente
+2. Ausencia de algunos elementos gramaticales del español (artículos, copulas en muchos contextos, morfología verbal similar)
+3. Presencia de elementos gramaticales ausentes en español (clasificadores, direccionalidad verbal compleja, gramática facial obligatoria)
+4. Estructura conceptual y organización de la información diferentes
+
+Variación Léxica y Regional
+
+Como se mencionó anteriormente, la LSCh presenta variación regional. Diferentes regiones de Chile pueden tener señas diferentes para un mismo concepto. Sin embargo, la estructura gramatical básica tiende a ser consistente a través de las regiones.
+
+Además de variación regional, existe variación generacional. Los señantes mayores pueden usar señas y estructuras gramaticales ligeramente diferentes a las generaciones más jóvenes, reflejando la evolución natural de la lengua.
+
+El Alfabeto Manual
+
+El alfabeto manual o dactilológico se usa en LSCh para deletrear:
+- Nombres propios
+- Palabras técnicas o especializadas para las cuales no existe seña
+- Préstamos del español
+- Énfasis o clarificación
+
+Cada letra del alfabeto español tiene una configuración de mano correspondiente. El alfabeto manual chileno es similar al usado en otros países hispanohablantes pero presenta algunas variaciones en ciertas letras.
+
+Es importante notar que el alfabeto manual es solo un componente pequeño de la LSCh, no la lengua completa. Deletrear todo en lugar de usar señas sería como un hablante de español deletreando cada palabra en lugar de pronunciarla.
+
+Préstamos Lingüísticos
+
+La LSCh ha incorporado préstamos de otras lenguas de señas, particularmente:
+- Lengua de Señas Americana (ASL) - debido al contacto educativo
+- Lenguas de señas de otros países latinoamericanos
+- Señas internacionales usadas en contextos específicos
+
+Estos préstamos se han adaptado a las reglas gramaticales de la LSCh y han evolucionado con el tiempo.
+
+Riqueza Expresiva
+
+La naturaleza visuoespacial de la LSCh permite formas de expresión y descripción que son difíciles o imposibles de lograr en lenguas orales. La simultaneidad (expresar múltiples elementos gramaticales al mismo tiempo) y el uso del espacio permiten descripciones visuales extremadamente precisas y detalladas.
+
+Poetas y artistas sordos aprovechan estas características para crear obras que explotan la belleza visual y las posibilidades expresivas únicas de la LSCh.
+
+Conclusión
+
+La LSCh es una lengua completa y compleja con su propia gramática sofisticada. Comprender su estructura lingüística es fundamental para apreciar su riqueza y para aprender la lengua adecuadamente. No es posible dominar la LSCh simplemente memorizando señas individuales; es necesario comprender y adquirir su gramática visual-espacial única.
+

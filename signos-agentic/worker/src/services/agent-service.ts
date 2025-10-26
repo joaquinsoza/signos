@@ -3,16 +3,19 @@ import { Env, AgentContext, AgentResponse, ChatMessage, AGENT_SYSTEM_PROMPT } fr
 import { SignMatcher } from './sign-matcher';
 import { LessonService } from './lesson-service';
 import { UserService } from './user-service';
+import { KnowledgeService } from './knowledge-service';
 
 export class AgentService {
   private signMatcher: SignMatcher;
   private lessonService: LessonService;
   private userService: UserService;
+  private knowledgeService: KnowledgeService;
 
   constructor(private env: Env) {
     this.signMatcher = new SignMatcher(env);
     this.lessonService = new LessonService(env);
     this.userService = new UserService(env);
+    this.knowledgeService = new KnowledgeService(env);
   }
 
   /**
@@ -23,16 +26,12 @@ export class AgentService {
     const intent = await this.detectIntent(message, context);
 
     switch (intent.type) {
-      case 'start_lesson':
-        return this.handleStartLesson(userId, context);
-      case 'answer_exercise':
-        return this.handleExerciseAnswer(userId, message, context);
-      case 'practice':
-        return this.handlePractice(userId);
-      case 'show_progress':
-        return this.handleShowProgress(userId);
       case 'search_sign':
-        return this.handleSearchSign(message);
+        return this.handleSearchSign(intent.data?.query || message);
+      case 'knowledge_query':
+        return this.handleKnowledgeQuery(intent.data?.query || message);
+      case 'hybrid_query':
+        return this.handleHybridQuery(intent.data?.signQuery || '', intent.data?.query || message);
       case 'chat':
       default:
         return this.handleChatMessage(message, context);
@@ -40,37 +39,123 @@ export class AgentService {
   }
 
   /**
-   * Detect user intent from message
+   * Detect user intent from message using intelligent classification
    */
   private async detectIntent(message: string, context: AgentContext): Promise<{ type: string; data?: any }> {
     const lowerMsg = message.toLowerCase();
 
-    // Check if answering an exercise
-    if (context.current_lesson && context.chat_history.length > 0) {
-      const lastMsg = context.chat_history[context.chat_history.length - 1];
-      if (lastMsg.role === 'assistant' && lastMsg.metadata?.exercise) {
-        return { type: 'answer_exercise' };
-      }
+    // Intelligent RAG selection
+    const ragIntent = await this.classifyRAGIntent(lowerMsg);
+    
+    if (ragIntent.type === 'sign_lookup') {
+      return { type: 'search_sign', data: { query: ragIntent.query } };
     }
-
-    // Keywords for intents
-    if (lowerMsg.match(/empezar|comenzar|iniciar|lección|leccion|aprender/)) {
-      return { type: 'start_lesson' };
+    
+    if (ragIntent.type === 'knowledge') {
+      return { type: 'knowledge_query', data: { query: ragIntent.query } };
     }
-
-    if (lowerMsg.match(/practicar|práctica|practica|ejercicio/)) {
-      return { type: 'practice' };
-    }
-
-    if (lowerMsg.match(/progreso|nivel|xp|puntos|racha/)) {
-      return { type: 'show_progress' };
-    }
-
-    if (lowerMsg.match(/cómo se dice|como se dice|qué significa|que significa|mostrar seña|muestra/)) {
-      return { type: 'search_sign' };
+    
+    if (ragIntent.type === 'hybrid') {
+      return { type: 'hybrid_query', data: { query: ragIntent.query, signQuery: ragIntent.signQuery } };
     }
 
     return { type: 'chat' };
+  }
+
+  /**
+   * Classify which RAG(s) to use based on the query
+   */
+  private async classifyRAGIntent(message: string): Promise<{
+    type: 'sign_lookup' | 'knowledge' | 'hybrid' | 'none';
+    query?: string;
+    signQuery?: string;
+  }> {
+    // Pattern 1: Clear sign lookup requests
+    // "¿Cómo se dice agua?", "Muestra la seña de hola", "qué significa esta seña"
+    const signLookupPatterns = [
+      /(?:cómo|como)\s+se\s+dice\s+["']?(\w+)["']?/,
+      /(?:cuál|cual)\s+es\s+(?:la\s+)?seña\s+(?:de|para)\s+["']?(\w+)["']?/,
+      /mostrar\s+(?:la\s+)?seña\s+(?:de|para)\s+["']?(\w+)["']?/,
+      /seña\s+(?:de|para)\s+["']?(\w+)["']?/,
+      /señar?\s+["']?(\w+)["']?/,
+    ];
+
+    for (const pattern of signLookupPatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        return {
+          type: 'sign_lookup',
+          query: match[1] || match[0],
+        };
+      }
+    }
+
+    // Pattern 2: Educational/theoretical questions (Knowledge RAG)
+    // "¿Qué es la cultura sorda?", "¿Cómo funciona la gramática?", "historia de LSCh"
+    const knowledgePatterns = [
+      /(?:qué|que)\s+es\s+(?:la|el|los|las)\s+/,
+      /(?:cuál|cual)\s+es\s+(?:la|el)\s+(?:historia|origen|diferencia)/,
+      /(?:cómo|como)\s+funciona\s+(?:la|el)/,
+      /(?:por\s+qué|porque|por\s+que)\s+/,
+      /explica(?:me)?\s+/,
+      /dame\s+información\s+sobre/,
+      /cuéntame\s+sobre/,
+      /\b(historia|cultura|gramática|gramatica|origen|diferencia|características|caracteristicas)\b/,
+      /\b(expresión|expresion)\s+facial/,
+      /\b(dactilología|dactilologia|alfabeto\s+manual)/,
+      /\b(comunidad\s+sorda|sordo)/,
+      /\b(consejo|tip|recomendación|recomendacion)/,
+    ];
+
+    for (const pattern of knowledgePatterns) {
+      if (pattern.test(message)) {
+        return {
+          type: 'knowledge',
+          query: message,
+        };
+      }
+    }
+
+    // Pattern 3: Hybrid queries (both RAGs)
+    // "¿Cómo se dice agua y qué importancia tiene?", "Muéstrame hola y explica su uso"
+    const hybridPatterns = [
+      /(?:cómo|como)\s+se\s+dice\s+(\w+).+(?:qué|que|explica|significa|importancia|contexto)/,
+      /mostrar\s+(\w+).+(?:y|también|además).+(?:explica|información|sobre)/,
+      /seña\s+de\s+(\w+).+(?:y|también).+(?:cuándo|cuando|cómo|como|por\s+qué)/,
+    ];
+
+    for (const pattern of hybridPatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        return {
+          type: 'hybrid',
+          query: message,
+          signQuery: match[1],
+        };
+      }
+    }
+
+    // If mentions specific words that are likely signs + asks about them
+    const words = message.split(/\s+/);
+    const hasSignWord = words.some(word => 
+      word.length > 3 && 
+      !/^(cómo|como|qué|que|cual|cuál|para|con|sin|por|porque|es|la|el|los|las|un|una)$/i.test(word)
+    );
+
+    const hasQuestionWord = /(?:qué|que|cómo|como|cuál|cual|por\s+qué|porque)/i.test(message);
+
+    if (hasSignWord && hasQuestionWord) {
+      // Check if it's more about the sign itself or about theory
+      const isSignQuery = /(?:se\s+dice|seña|significa|mostrar|muestra)/i.test(message);
+      
+      if (isSignQuery) {
+        return { type: 'sign_lookup', query: message };
+      } else {
+        return { type: 'knowledge', query: message };
+      }
+    }
+
+    return { type: 'none' };
   }
 
   /**
@@ -230,30 +315,152 @@ export class AgentService {
   }
 
   /**
-   * Handle search for a sign
+   * Handle search for a sign (SignMatcher RAG)
    */
-  private async handleSearchSign(message: string): Promise<AgentResponse> {
-    // Extract search term (simple approach)
-    const searchTerm = message
+  private async handleSearchSign(query: string): Promise<AgentResponse> {
+    // Extract search term
+    const searchTerm = query
       .toLowerCase()
-      .replace(/cómo se dice|como se dice|qué significa|que significa|mostrar|muestra|seña de/gi, '')
+      .replace(/cómo se dice|como se dice|qué significa|que significa|cuál es la seña|cual es la sena|mostrar|muestra|seña de|sena de/gi, '')
       .trim()
-      .replace(/[¿?]/g, '');
+      .replace(/[¿?¡!]/g, '');
 
     const signs = await this.signMatcher.findSigns(searchTerm);
 
     if (signs.length === 0) {
       return {
-        message: `No encontré señas para "${searchTerm}" en mi base de datos. 😔\n\n¿Puedes intentar con otra palabra?`,
+        message: `No encontré la seña para **"${searchTerm}"** en mi base de datos. 😔\n\n` +
+          `💡 Tips:\n` +
+          `- Intenta con una palabra similar\n` +
+          `- Verifica la ortografía\n` +
+          `- Prueba con sinónimos\n\n` +
+          `O pregúntame: "¿Qué señas hay sobre [tema]?"`,
         next_action: 'chat',
       };
     }
 
     const topSign = signs[0];
+    const confidence = Math.round(topSign.confidence * 100);
+
+    let response = `🤟 **Seña: ${topSign.glosa}**\n\n`;
+    response += `📖 **Definición**: ${topSign.definition}\n`;
+    response += `🎯 **Confianza**: ${confidence}%\n\n`;
+
+    if (signs.length > 1) {
+      response += `💡 **Señas relacionadas**:\n`;
+      signs.slice(1, 4).forEach((sign, i) => {
+        response += `${i + 1}. ${sign.glosa} (${Math.round(sign.confidence * 100)}%)\n`;
+      });
+      response += `\n`;
+    }
+
+    response += `¿Quieres ver otra seña o aprender más sobre esta? 🤟`;
 
     return {
-      message: `Aquí está la seña para "${topSign.glosa}":\n\n📖 **Definición**: ${topSign.definition}\n\n¿Te gustaría ver más señas relacionadas?`,
+      message: response,
       signs: [topSign],
+      next_action: 'chat',
+    };
+  }
+
+  /**
+   * Handle knowledge query (educational questions - Knowledge RAG)
+   */
+  private async handleKnowledgeQuery(message: string): Promise<AgentResponse> {
+    // Search knowledge base
+    const articles = await this.knowledgeService.searchKnowledge(message);
+
+    if (articles.length === 0) {
+      return {
+        message: 'No encontré información sobre eso en mi base de conocimientos. 🤔\n\n' +
+          '💡 Puedo ayudarte con:\n' +
+          '- Historia de LSCh\n' +
+          '- Gramática y estructura\n' +
+          '- Cultura sorda\n' +
+          '- Expresiones faciales\n' +
+          '- Diferencias entre lenguas de señas\n' +
+          '- Consejos de aprendizaje\n\n' +
+          '¿Sobre qué te gustaría saber?',
+        next_action: 'chat',
+      };
+    }
+
+    // Format response with the most relevant article
+    const topArticle = articles[0];
+    const relevance = Math.round(topArticle.confidence * 100);
+    
+    let response = `📚 **${topArticle.title}**\n`;
+    if (relevance < 100) {
+      response += `🎯 Relevancia: ${relevance}%\n`;
+    }
+    response += `\n${topArticle.content}`;
+
+    // Add related topics if multiple results
+    if (articles.length > 1) {
+      response += `\n\n💡 **También podrías estar interesado en:**\n`;
+      articles.slice(1, 4).forEach((article, index) => {
+        response += `${index + 1}. ${article.title}\n`;
+      });
+      response += `\nPregúntame sobre cualquiera de estos temas.`;
+    }
+
+    response += `\n\n¿Tienes más preguntas? 🤟`;
+
+    return {
+      message: response,
+      next_action: 'chat',
+    };
+  }
+
+  /**
+   * Handle hybrid query (both RAGs - sign + context)
+   */
+  private async handleHybridQuery(signQuery: string, fullQuery: string): Promise<AgentResponse> {
+    // Get sign from SignMatcher RAG
+    const signs = await this.signMatcher.findSigns(signQuery);
+    
+    // Get educational context from Knowledge RAG
+    const articles = await this.knowledgeService.searchKnowledge(fullQuery);
+
+    let response = '';
+    let responseSign = null;
+
+    // Part 1: Show the sign
+    if (signs.length > 0) {
+      const topSign = signs[0];
+      responseSign = topSign;
+      const confidence = Math.round(topSign.confidence * 100);
+
+      response += `🤟 **Seña: ${topSign.glosa}**\n\n`;
+      response += `📖 **Definición**: ${topSign.definition}\n`;
+      response += `🎯 **Confianza**: ${confidence}%\n\n`;
+    } else {
+      response += `⚠️ No encontré la seña específica para "${signQuery}", pero te puedo dar contexto educativo:\n\n`;
+    }
+
+    // Part 2: Add educational context
+    if (articles.length > 0) {
+      const topArticle = articles[0];
+      
+      response += `📚 **Contexto Educativo**: ${topArticle.title}\n\n`;
+      
+      // Extract most relevant paragraph (first 500 chars)
+      const excerpt = topArticle.content.length > 500 
+        ? topArticle.content.substring(0, 500) + '...' 
+        : topArticle.content;
+      
+      response += `${excerpt}\n\n`;
+      
+      if (topArticle.content.length > 500) {
+        response += `💡 *Hay más información disponible. Pregúntame: "${topArticle.title}"*\n\n`;
+      }
+    }
+
+    response += `¿Quieres saber más sobre la seña o sobre el tema? 🤟`;
+
+    return {
+      message: response,
+      signs: responseSign ? [responseSign] : undefined,
       next_action: 'chat',
     };
   }

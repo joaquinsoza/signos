@@ -1,6 +1,6 @@
 // Main worker entry point for signos-agentic
 import { Env, ChatMessage, AgentContext } from './types';
-import { AgentService } from './services/agent-service';
+import { AgenticService } from './services/agentic-service';
 import { UserService } from './services/user-service';
 import { LessonService } from './services/lesson-service';
 import { SignMatcher } from './services/sign-matcher';
@@ -60,6 +60,11 @@ export default {
         return handleSearchSigns(url, env, corsHeaders);
       }
 
+      // Embedding generation endpoint (for PDF processing script)
+      if (path === '/api/embedding' && request.method === 'POST') {
+        return handleGenerateEmbedding(request, env, corsHeaders);
+      }
+
       return jsonResponse({ error: 'Not found' }, corsHeaders, 404);
     } catch (error) {
       console.error('Error:', error);
@@ -73,106 +78,38 @@ export default {
 };
 
 /**
- * Handle chat message
+ * Handle chat message (anonymous, no user tracking)
  */
 async function handleChat(request: Request, env: Env, corsHeaders: any): Promise<Response> {
   const body = await request.json() as {
-    user_id: string;
     message: string;
     session_id?: string;
   };
 
-  if (!body.user_id || !body.message) {
-    return jsonResponse({ error: 'Missing user_id or message' }, corsHeaders, 400);
+  if (!body.message) {
+    return jsonResponse({ error: 'Missing message' }, corsHeaders, 400);
   }
 
-  const agentService = new AgentService(env);
-  const userService = new UserService(env);
-  const lessonService = new LessonService(env);
+  const agenticService = new AgenticService(env);
 
-  // Get user
-  const user = await userService.getUser(body.user_id);
-
-  // Get chat history
+  // Use anonymous session
   const sessionId = body.session_id || `session_${Date.now()}`;
-  const historyResult = await env.DB
-    .prepare(`
-      SELECT * FROM chat_messages
-      WHERE user_id = ? AND session_id = ?
-      ORDER BY created_at DESC
-      LIMIT 10
-    `)
-    .bind(body.user_id, sessionId)
-    .all<ChatMessage>();
 
-  const chatHistory = (historyResult.results || []).reverse();
-
-  // Get current lesson (if any in progress)
-  const progressResult = await env.DB
-    .prepare(`
-      SELECT l.* FROM lessons l
-      JOIN user_lesson_progress ulp ON l.id = ulp.lesson_id
-      WHERE ulp.user_id = ? AND ulp.status = 'in_progress'
-      LIMIT 1
-    `)
-    .bind(body.user_id)
-    .first();
-
-  let currentLesson = null;
-  if (progressResult) {
-    currentLesson = await lessonService.getLesson(progressResult.id as string);
-  }
-
-  // Get available lessons
-  const availableLessons = await lessonService.getAvailableLessons(body.user_id);
-
-  // Build context
+  // Build minimal context (no user, no lessons)
   const context: AgentContext = {
-    user,
-    current_lesson: currentLesson,
-    chat_history: chatHistory,
-    available_lessons: availableLessons,
+    user: null,
+    current_lesson: null,
+    chat_history: [],
+    available_lessons: [],
   };
 
-  // Process message
-  const response = await agentService.processMessage(body.user_id, body.message, context);
-
-  // Save messages to DB
-  const userMsgId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  await env.DB
-    .prepare(`
-      INSERT INTO chat_messages (id, user_id, session_id, role, content, created_at)
-      VALUES (?, ?, ?, 'user', ?, ?)
-    `)
-    .bind(userMsgId, body.user_id, sessionId, body.message, Date.now())
-    .run();
-
-  const assistantMsgId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  const metadata = {
-    exercise: response.exercise,
-    signs: response.signs,
-    xp_earned: response.xp_earned,
-    level_up: response.level_up,
-    achievement_unlocked: response.achievement_unlocked,
-  };
-
-  await env.DB
-    .prepare(`
-      INSERT INTO chat_messages (id, user_id, session_id, role, content, metadata, created_at)
-      VALUES (?, ?, ?, 'assistant', ?, ?, ?)
-    `)
-    .bind(assistantMsgId, body.user_id, sessionId, response.message, JSON.stringify(metadata), Date.now())
-    .run();
+  // Process message with agentic reasoning
+  const response = await agenticService.processMessage(body.message, context);
 
   return jsonResponse({
     success: true,
     session_id: sessionId,
     response: response,
-    user: {
-      xp: user.total_xp,
-      level: user.current_level,
-      streak: user.streak_days,
-    },
   }, corsHeaders);
 }
 
@@ -226,9 +163,24 @@ async function handleGetUserProgress(url: URL, env: Env, corsHeaders: any): Prom
   }
 
   const userService = new UserService(env);
-  const user = await userService.getUser(userId);
-  const progress = await userService.getUserLessonProgress(userId);
-  const achievements = await userService.getUserAchievements(userId);
+  
+  // Get user - must exist
+  let user;
+  try {
+    user = await userService.getUser(userId);
+  } catch (error) {
+    console.error(`[handleGetUserProgress] User ${userId} not found`);
+    return jsonResponse({ 
+      error: 'User not found', 
+      message: 'Please create a user first using /api/user endpoint',
+      user_id: userId 
+    }, corsHeaders, 404);
+  }
+
+  const actualUserId = user.id;
+  
+  const progress = await userService.getUserLessonProgress(actualUserId);
+  const achievements = await userService.getUserAchievements(actualUserId);
 
   const completed = progress.filter(p => p.status === 'completed').length;
   const inProgress = progress.filter(p => p.status === 'in_progress').length;
@@ -316,6 +268,36 @@ async function handleSearchSigns(url: URL, env: Env, corsHeaders: any): Promise<
     signs,
     count: signs.length,
   }, corsHeaders);
+}
+
+/**
+ * Handle generate embedding
+ */
+async function handleGenerateEmbedding(request: Request, env: Env, corsHeaders: any): Promise<Response> {
+  const body = await request.json() as { text: string };
+  
+  if (!body.text) {
+    return jsonResponse({ error: 'Missing text' }, corsHeaders, 400);
+  }
+
+  try {
+    // Generate embedding
+    const response = await env.AI.run('@cf/baai/bge-base-en-v1.5', {
+      text: [body.text],
+    });
+
+    return jsonResponse({
+      success: true,
+      embedding: response.data[0],
+      dimensions: response.data[0].length,
+    }, corsHeaders);
+  } catch (error) {
+    console.error('Error generating embedding:', error);
+    return jsonResponse({
+      error: 'Failed to generate embedding',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, corsHeaders, 500);
+  }
 }
 
 /**

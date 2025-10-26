@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Exercise } from '../lib/api';
 import SignVideoPlayer from './SignVideoPlayer';
-import { CheckCircle, XCircle, Lightbulb } from 'lucide-react';
+import { Lightbulb } from 'lucide-react';
 
 interface ExerciseCardProps {
   exercise: Exercise;

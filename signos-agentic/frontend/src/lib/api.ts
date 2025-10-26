@@ -109,10 +109,9 @@ export async function getUser(userId: string): Promise<User> {
 }
 
 /**
- * Send chat message
+ * Send chat message (anonymous)
  */
 export async function sendChatMessage(
-  userId: string,
   message: string,
   sessionId?: string
 ): Promise<ChatResponse> {
@@ -120,7 +119,6 @@ export async function sendChatMessage(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      user_id: userId,
       message,
       session_id: sessionId,
     }),

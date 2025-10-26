@@ -11,16 +11,11 @@ interface Message {
   metadata?: ChatResponse['response'];
 }
 
-interface ChatInterfaceProps {
-  userId: string;
-  onXPUpdate?: (xp: number, level: number, streak: number) => void;
-}
-
-export default function ChatInterface({ userId, onXPUpdate }: ChatInterfaceProps) {
+export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: '¡Hola! 🤟 Soy tu profesor de Lengua de Señas Chilena (LSCh).\n\n¿Qué te gustaría hacer hoy?\n\n📚 Escribe "empezar lección" para aprender\n🎯 Escribe "practicar" para repasar\n🔍 Escribe "cómo se dice..." para buscar señas\n📊 Escribe "mi progreso" para ver tus estadísticas',
+      content: '¡Hola! 🤟 Soy tu asistente de Lengua de Señas Chilena (LSCh).\n\n¿En qué puedo ayudarte?\n\n🔍 Pregúntame "¿cómo se dice...?" para buscar señas\n📚 Pregúntame sobre la historia de LSCh\n💡 Consulta sobre gramática, cultura o la comunidad sorda\n🗣️ Conversa libremente sobre LSCh',
     },
   ]);
   const [input, setInput] = useState('');
@@ -50,15 +45,10 @@ export default function ChatInterface({ userId, onXPUpdate }: ChatInterfaceProps
     setIsLoading(true);
 
     try {
-      const response = await sendChatMessage(userId, textToSend, sessionId);
+      const response = await sendChatMessage(textToSend, sessionId);
       
       if (!sessionId) {
         setSessionId(response.session_id);
-      }
-
-      // Update XP
-      if (onXPUpdate) {
-        onXPUpdate(response.user.xp, response.user.level, response.user.streak);
       }
 
       // Add assistant message
