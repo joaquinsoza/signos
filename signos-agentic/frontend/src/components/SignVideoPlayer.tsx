@@ -21,6 +21,9 @@ export default function SignVideoPlayer({ signs, autoplay = false, loop = false 
   const currentSign = signs[currentSignIndex];
   const currentImage = currentSign?.images[currentImageIndex];
   const imagePath = currentImage ? `${BASE_URL}/${currentImage.path}` : null;
+  
+  // Check if we need controls: hide if single sign with single image
+  const needsControls = signs.length > 1 || (currentSign?.images.length || 0) > 1;
 
   useEffect(() => {
     if (isPlaying) {
@@ -102,46 +105,50 @@ export default function SignVideoPlayer({ signs, autoplay = false, loop = false 
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="mt-4 flex items-center justify-center gap-4">
-        <button
-          onClick={handleRestart}
-          className="p-3 rounded-full bg-dark-card hover:bg-dark-hover transition"
-          title="Reiniciar"
-        >
-          <RotateCcw className="w-5 h-5" />
-        </button>
+      {/* Controls - Only show if there are multiple signs or multiple images */}
+      {needsControls && (
+        <div className="mt-4 flex items-center justify-center gap-4">
+          <button
+            onClick={handleRestart}
+            className="p-3 rounded-full bg-dark-card hover:bg-dark-hover transition"
+            title="Reiniciar"
+          >
+            <RotateCcw className="w-5 h-5" />
+          </button>
 
-        <button
-          onClick={handlePlayPause}
-          className="p-4 rounded-full bg-primary hover:bg-primary/80 transition"
-          title={isPlaying ? 'Pausar' : 'Reproducir'}
-        >
-          {isPlaying ? (
-            <Pause className="w-6 h-6" />
-          ) : (
-            <Play className="w-6 h-6" />
-          )}
-        </button>
+          <button
+            onClick={handlePlayPause}
+            className="p-4 rounded-full bg-primary hover:bg-primary/80 transition"
+            title={isPlaying ? 'Pausar' : 'Reproducir'}
+          >
+            {isPlaying ? (
+              <Pause className="w-6 h-6" />
+            ) : (
+              <Play className="w-6 h-6" />
+            )}
+          </button>
 
-        <div className="text-sm text-gray-400">
-          Seña {currentSignIndex + 1} de {signs.length}
+          <div className="text-sm text-gray-400">
+            Seña {currentSignIndex + 1} de {signs.length}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Progress indicator */}
-      <div className="mt-4">
-        <div className="flex gap-1">
-          {signs.map((_, index) => (
-            <div
-              key={index}
-              className={`h-1 flex-1 rounded-full transition ${
-                index <= currentSignIndex ? 'bg-primary' : 'bg-dark-card'
-              }`}
-            />
-          ))}
+      {/* Progress indicator - Only show if multiple signs */}
+      {signs.length > 1 && (
+        <div className="mt-4">
+          <div className="flex gap-1">
+            {signs.map((_, index) => (
+              <div
+                key={index}
+                className={`h-1 flex-1 rounded-full transition ${
+                  index <= currentSignIndex ? 'bg-primary' : 'bg-dark-card'
+                }`}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

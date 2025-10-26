@@ -85,9 +85,9 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-gray-800 rounded-lg border border-gray-700">
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
         {messages.map((message, index) => (
           <div
             key={index}
@@ -165,7 +165,7 @@ export default function ChatInterface() {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-dark-hover p-4">
+      <div className="border-t border-gray-700 p-4 bg-gray-800 flex-shrink-0">
         <div className="flex gap-2">
           <input
             type="text"
